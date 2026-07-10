@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cảnh báo môi trường ảo Python
+.venv/
+venv/
+env/
+ENV/
+
+# Tệp môi trường nhạy cảm
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDEs và Hệ điều hành
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

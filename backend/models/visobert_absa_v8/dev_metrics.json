@@ -1,0 +1,469 @@
+{
+  "macro": {
+    "micro_f1": 0.9401,
+    "macro_f1": 0.9249,
+    "weighted_f1": 0.9404,
+    "samples_f1": 0.9434,
+    "per_label": {
+      "PRODUCT": {
+        "precision": 0.9447,
+        "recall": 0.968,
+        "f1": 0.9562,
+        "support": 1625
+      },
+      "SHIPPING": {
+        "precision": 0.945,
+        "recall": 0.9785,
+        "f1": 0.9614,
+        "support": 930
+      },
+      "SERVICE": {
+        "precision": 0.8322,
+        "recall": 0.9714,
+        "f1": 0.8964,
+        "support": 245
+      },
+      "PRICE": {
+        "precision": 0.8707,
+        "recall": 0.9621,
+        "f1": 0.9141,
+        "support": 448
+      },
+      "OTHERS": {
+        "precision": 0.8859,
+        "recall": 0.9066,
+        "f1": 0.8962,
+        "support": 514
+      }
+    }
+  },
+  "micro": {
+    "micro_f1": 0.9074,
+    "macro_f1": 0.8687,
+    "weighted_f1": 0.9083,
+    "samples_f1": 0.91,
+    "per_label": {
+      "Appearance_Design": {
+        "precision": 0.9352,
+        "recall": 0.9688,
+        "f1": 0.9517,
+        "support": 417
+      },
+      "Material_BuildQuality": {
+        "precision": 0.8936,
+        "recall": 0.9333,
+        "f1": 0.913,
+        "support": 270
+      },
+      "Performance_Functionality": {
+        "precision": 0.8927,
+        "recall": 0.9005,
+        "f1": 0.8966,
+        "support": 1035
+      },
+      "Usability_Experience": {
+        "precision": 0.8233,
+        "recall": 0.9465,
+        "f1": 0.8806,
+        "support": 187
+      },
+      "Authenticity_Packaging": {
+        "precision": 0.8,
+        "recall": 0.958,
+        "f1": 0.8719,
+        "support": 238
+      },
+      "Delivery_Speed": {
+        "precision": 0.9569,
+        "recall": 0.9521,
+        "f1": 0.9545,
+        "support": 606
+      },
+      "External_Packaging": {
+        "precision": 0.9469,
+        "recall": 0.9746,
+        "f1": 0.9605,
+        "support": 512
+      },
+      "Courier_Attitude": {
+        "precision": 0.5962,
+        "recall": 0.8378,
+        "f1": 0.6966,
+        "support": 37
+      },
+      "Shipping_Fee": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 12
+      },
+      "Response_Time": {
+        "precision": 0.7857,
+        "recall": 0.8148,
+        "f1": 0.8,
+        "support": 54
+      },
+      "Consulting_Attitude": {
+        "precision": 0.8742,
+        "recall": 0.9362,
+        "f1": 0.9041,
+        "support": 141
+      },
+      "AfterSales_Complaint": {
+        "precision": 0.6852,
+        "recall": 0.9136,
+        "f1": 0.7831,
+        "support": 81
+      },
+      "Price_Promotion": {
+        "precision": 0.8619,
+        "recall": 0.937,
+        "f1": 0.8979,
+        "support": 413
+      },
+      "Price_Performance_Ratio": {
+        "precision": 0.8085,
+        "recall": 0.8261,
+        "f1": 0.8172,
+        "support": 92
+      },
+      "Overall_Sentiment": {
+        "precision": 0.932,
+        "recall": 0.9043,
+        "f1": 0.9179,
+        "support": 470
+      },
+      "Spam_Noise": {
+        "precision": 1.0,
+        "recall": 0.8,
+        "f1": 0.8889,
+        "support": 5
+      },
+      "Intent_QA": {
+        "precision": 0.6333,
+        "recall": 0.6333,
+        "f1": 0.6333,
+        "support": 60
+      }
+    }
+  },
+  "micro_sentiment": {
+    "micro_f1": 0.8162,
+    "macro_f1": 0.5368,
+    "weighted_f1": 0.837,
+    "samples_f1": 0.8369,
+    "per_label": {
+      "Appearance_Design__POS": {
+        "precision": 0.8998,
+        "recall": 0.9787,
+        "f1": 0.9376,
+        "support": 376
+      },
+      "Appearance_Design__NEG": {
+        "precision": 0.5,
+        "recall": 0.675,
+        "f1": 0.5745,
+        "support": 40
+      },
+      "Appearance_Design__NEU": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 1
+      },
+      "Material_BuildQuality__POS": {
+        "precision": 0.8929,
+        "recall": 0.8578,
+        "f1": 0.875,
+        "support": 204
+      },
+      "Material_BuildQuality__NEG": {
+        "precision": 0.6984,
+        "recall": 0.6667,
+        "f1": 0.6822,
+        "support": 66
+      },
+      "Material_BuildQuality__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Performance_Functionality__POS": {
+        "precision": 0.8409,
+        "recall": 0.8773,
+        "f1": 0.8587,
+        "support": 717
+      },
+      "Performance_Functionality__NEG": {
+        "precision": 0.7747,
+        "recall": 0.6125,
+        "f1": 0.6841,
+        "support": 320
+      },
+      "Performance_Functionality__NEU": {
+        "precision": 0.6667,
+        "recall": 0.5,
+        "f1": 0.5714,
+        "support": 4
+      },
+      "Usability_Experience__POS": {
+        "precision": 0.8333,
+        "recall": 0.8462,
+        "f1": 0.8397,
+        "support": 130
+      },
+      "Usability_Experience__NEG": {
+        "precision": 0.6119,
+        "recall": 0.7193,
+        "f1": 0.6613,
+        "support": 57
+      },
+      "Usability_Experience__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Authenticity_Packaging__POS": {
+        "precision": 0.7702,
+        "recall": 0.8732,
+        "f1": 0.8185,
+        "support": 142
+      },
+      "Authenticity_Packaging__NEG": {
+        "precision": 0.7879,
+        "recall": 0.8387,
+        "f1": 0.8125,
+        "support": 93
+      },
+      "Authenticity_Packaging__NEU": {
+        "precision": 0.0187,
+        "recall": 0.6667,
+        "f1": 0.0364,
+        "support": 3
+      },
+      "Delivery_Speed__POS": {
+        "precision": 0.9474,
+        "recall": 0.9492,
+        "f1": 0.9483,
+        "support": 512
+      },
+      "Delivery_Speed__NEG": {
+        "precision": 0.7684,
+        "recall": 0.7849,
+        "f1": 0.7766,
+        "support": 93
+      },
+      "Delivery_Speed__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      },
+      "External_Packaging__POS": {
+        "precision": 0.9144,
+        "recall": 0.9578,
+        "f1": 0.9356,
+        "support": 379
+      },
+      "External_Packaging__NEG": {
+        "precision": 0.9068,
+        "recall": 0.8045,
+        "f1": 0.8526,
+        "support": 133
+      },
+      "External_Packaging__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Courier_Attitude__POS": {
+        "precision": 0.5,
+        "recall": 0.8966,
+        "f1": 0.642,
+        "support": 29
+      },
+      "Courier_Attitude__NEG": {
+        "precision": 0.7,
+        "recall": 0.875,
+        "f1": 0.7778,
+        "support": 8
+      },
+      "Courier_Attitude__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Shipping_Fee__POS": {
+        "precision": 0.5455,
+        "recall": 1.0,
+        "f1": 0.7059,
+        "support": 6
+      },
+      "Shipping_Fee__NEG": {
+        "precision": 0.7143,
+        "recall": 0.8333,
+        "f1": 0.7692,
+        "support": 6
+      },
+      "Shipping_Fee__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Response_Time__POS": {
+        "precision": 0.44,
+        "recall": 0.7857,
+        "f1": 0.5641,
+        "support": 14
+      },
+      "Response_Time__NEG": {
+        "precision": 0.6905,
+        "recall": 0.7838,
+        "f1": 0.7342,
+        "support": 37
+      },
+      "Response_Time__NEU": {
+        "precision": 0.1111,
+        "recall": 0.3333,
+        "f1": 0.1667,
+        "support": 3
+      },
+      "Consulting_Attitude__POS": {
+        "precision": 0.8083,
+        "recall": 0.9065,
+        "f1": 0.8546,
+        "support": 107
+      },
+      "Consulting_Attitude__NEG": {
+        "precision": 0.6842,
+        "recall": 0.7647,
+        "f1": 0.7222,
+        "support": 34
+      },
+      "Consulting_Attitude__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "AfterSales_Complaint__POS": {
+        "precision": 0.2791,
+        "recall": 0.9231,
+        "f1": 0.4286,
+        "support": 13
+      },
+      "AfterSales_Complaint__NEG": {
+        "precision": 0.5806,
+        "recall": 0.9153,
+        "f1": 0.7105,
+        "support": 59
+      },
+      "AfterSales_Complaint__NEU": {
+        "precision": 0.0698,
+        "recall": 0.3333,
+        "f1": 0.1154,
+        "support": 9
+      },
+      "Price_Promotion__POS": {
+        "precision": 0.8125,
+        "recall": 0.8754,
+        "f1": 0.8428,
+        "support": 297
+      },
+      "Price_Promotion__NEG": {
+        "precision": 0.6905,
+        "recall": 0.75,
+        "f1": 0.719,
+        "support": 116
+      },
+      "Price_Promotion__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      },
+      "Price_Performance_Ratio__POS": {
+        "precision": 0.7143,
+        "recall": 0.8667,
+        "f1": 0.7831,
+        "support": 75
+      },
+      "Price_Performance_Ratio__NEG": {
+        "precision": 0.6111,
+        "recall": 0.6471,
+        "f1": 0.6286,
+        "support": 17
+      },
+      "Price_Performance_Ratio__NEU": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Overall_Sentiment__POS": {
+        "precision": 0.8963,
+        "recall": 0.9014,
+        "f1": 0.8988,
+        "support": 345
+      },
+      "Overall_Sentiment__NEG": {
+        "precision": 0.93,
+        "recall": 0.7881,
+        "f1": 0.8532,
+        "support": 118
+      },
+      "Overall_Sentiment__NEU": {
+        "precision": 0.4545,
+        "recall": 0.4545,
+        "f1": 0.4545,
+        "support": 11
+      },
+      "Spam_Noise__POS": {
+        "precision": 0.0286,
+        "recall": 1.0,
+        "f1": 0.0556,
+        "support": 1
+      },
+      "Spam_Noise__NEG": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Spam_Noise__NEU": {
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1": 0.8571,
+        "support": 4
+      },
+      "Intent_QA__POS": {
+        "precision": 1.0,
+        "recall": 0.25,
+        "f1": 0.4,
+        "support": 4
+      },
+      "Intent_QA__NEG": {
+        "precision": 0.5111,
+        "recall": 0.6765,
+        "f1": 0.5823,
+        "support": 34
+      },
+      "Intent_QA__NEU": {
+        "precision": 0.1642,
+        "recall": 0.5,
+        "f1": 0.2472,
+        "support": 22
+      }
+    }
+  },
+  "overall": {
+    "accuracy": 0.8994,
+    "macro_f1": 0.7467,
+    "weighted_f1": 0.9004
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "PRODUCT": {
+    "description": "Những vấn đề thuộc bản thân sản phẩm.",
+    "micro_aspects": {
+      "Appearance_Design": "Hình thức, màu sắc, form dáng, mẫu mã.",
+      "Material_BuildQuality": "Chất liệu, đường may, độ hoàn thiện, lỗi vật lý.",
+      "Performance_Functionality": "Hiệu năng, tính năng, độ bền, hoạt động.",
+      "Usability_Experience": "Trải nghiệm sử dụng, độ thoải mái, tiện dụng.",
+      "Authenticity_Packaging": "Chính hãng, hàng fake, bao bì gốc, tem nhãn."
+    }
+  },
+  "SHIPPING": {
+    "description": "Vận chuyển, đóng gói vận chuyển, shipper, phí vận chuyển.",
+    "micro_aspects": {
+      "Delivery_Speed": "Giao nhanh/chậm, giao trễ, hẹn giao.",
+      "External_Packaging": "Đóng gói vận chuyển, móp méo, bọc kỹ.",
+      "Courier_Attitude": "Thái độ nhân viên giao hàng/shipper.",
+      "Shipping_Fee": "Phí ship, freeship, mã vận chuyển."
+    }
+  },
+  "SERVICE": {
+    "description": "Dịch vụ shop/sàn sau và trước bán hàng.",
+    "micro_aspects": {
+      "Response_Time": "Tốc độ phản hồi tin nhắn, hỗ trợ nhanh/chậm.",
+      "Consulting_Attitude": "Thái độ tư vấn, nhiệt tình, lịch sự.",
+      "AfterSales_Complaint": "Đổi trả, bảo hành, xử lý khiếu nại."
+    }
+  },
+  "PRICE": {
+    "description": "Giá, voucher, khuyến mãi, cảm nhận đáng tiền.",
+    "micro_aspects": {
+      "Price_Promotion": "Giá bán, voucher, flash sale, giảm giá.",
+      "Price_Performance_Ratio": "Đáng tiền, xứng đáng với giá, rẻ/đắt so với chất lượng."
+    }
+  },
+  "OTHERS": {
+    "description": "Nội dung chung, spam, hỏi đáp hoặc ý định không thuộc nhóm trên.",
+    "micro_aspects": {
+      "Overall_Sentiment": "Cảm xúc chung không rõ aspect cụ thể.",
+      "Spam_Noise": "Spam, nhận xu, vô nghĩa, lặp vô nghĩa.",
+      "Intent_QA": "Hỏi đáp, ý định mua hàng, yêu cầu thông tin."
+    }
+  }
+}

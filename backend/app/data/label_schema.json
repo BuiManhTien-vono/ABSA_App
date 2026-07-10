@@ -1,0 +1,58 @@
+{
+  "aspect_sentiment": {
+    "macro": [
+      "PRODUCT",
+      "SHIPPING",
+      "SERVICE",
+      "PRICE",
+      "OTHERS"
+    ],
+    "micro": {
+      "PRODUCT": [
+        "Appearance_Design",
+        "Material_BuildQuality",
+        "Performance_Functionality",
+        "Usability_Experience",
+        "Authenticity_Packaging"
+      ],
+      "SHIPPING": [
+        "Delivery_Speed",
+        "External_Packaging",
+        "Courier_Attitude",
+        "Shipping_Fee"
+      ],
+      "SERVICE": [
+        "Response_Time",
+        "Consulting_Attitude",
+        "AfterSales_Complaint"
+      ],
+      "PRICE": [
+        "Price_Promotion",
+        "Price_Performance_Ratio"
+      ],
+      "OTHERS": [
+        "Overall_Sentiment",
+        "Spam_Noise",
+        "Intent_QA"
+      ]
+    },
+    "sentiment": [
+      "POS",
+      "NEG",
+      "NEU"
+    ],
+    "evidence": "Exact phrase copied from text. Required for every aspect.",
+    "evidence_start": "Optional character start offset.",
+    "evidence_end": "Optional character end offset."
+  },
+  "comment_level": {
+    "overall_sentiment": [
+      "POS",
+      "NEG",
+      "NEU",
+      "MIXED"
+    ],
+    "spam": "boolean",
+    "intent_qa": "boolean"
+  }
+}

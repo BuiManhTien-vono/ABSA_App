@@ -1,0 +1,48 @@
+.sentiment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform var(--transition-fast);
+}
+
+.sentiment-badge:hover {
+  transform: scale(1.05);
+}
+
+.sentiment-badge .badge-icon {
+  font-size: 10px;
+}
+
+.sentiment-POS {
+  color: var(--color-pos);
+  background: var(--color-pos-bg);
+  border: 1px solid var(--color-pos-border);
+}
+
+.sentiment-NEG {
+  color: var(--color-neg);
+  background: var(--color-neg-bg);
+  border: 1px solid var(--color-neg-border);
+}
+
+.sentiment-NEU {
+  color: var(--color-neu);
+  background: var(--color-neu-bg);
+  border: 1px solid var(--color-neu-border);
+}
+
+.sentiment-MIXED {
+  color: var(--color-mixed);
+  background: var(--color-mixed-bg);
+  border: 1px solid var(--color-mixed-border);
+}
+
+.size-sm { padding: 2px 8px; font-size: 10px; }
+.size-lg { padding: 5px 14px; font-size: 13px; }
