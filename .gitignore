@@ -3,13 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Cảnh báo môi trường ảo Python
+# Python virtual environment
 .venv/
 venv/
 env/
 ENV/
 
-# Tệp môi trường nhạy cảm
+# Sensitive environment files
 .env
 .env.local
 .env.*.local
@@ -18,10 +18,29 @@ ENV/
 node_modules/
 dist/
 dist-ssr/
+.vite/
 *.local
 
-# IDEs và Hệ điều hành
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.mvn/
+.gradle/
+
+# AI Model weight files (large binaries)
+*.pt
+*.bin
+*.onnx
+*.safetensors
+*.h5
+
+# IDEs and OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+*.log
