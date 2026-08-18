@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: feedbackai-postgres
+    environment:
+      POSTGRES_DB: feedbackai
+      POSTGRES_USER: feedbackai
+      POSTGRES_PASSWORD: feedbackai123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - feedbackai-network
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: feedbackai-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-changeme}
+      ABSA_HOST: "0.0.0.0"
+      ABSA_PORT: "8000"
+    networks:
+      - feedbackai-network
+
+  backend-java:
+    build:
+      context: ./backend-java
+      dockerfile: Dockerfile
+    container_name: feedbackai-backend-java
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - ai-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: feedbackai
+      DB_USER: feedbackai
+      DB_PASSWORD: feedbackai123
+      AI_SERVICE_URL: http://ai-service:8000
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production-must-be-at-least-256-bits-long!!}
+      FRONTEND_URL: http://localhost:5173
+    networks:
+      - feedbackai-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: feedbackai-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend-java
+    networks:
+      - feedbackai-network
+
+volumes:
+  pgdata:
+
+networks:
+  feedbackai-network:
+    driver: bridge

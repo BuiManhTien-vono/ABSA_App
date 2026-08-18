@@ -1,0 +1,53 @@
+.reports-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.generate-btn {
+  padding: 10px 16px;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-info h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.report-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.download-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+}

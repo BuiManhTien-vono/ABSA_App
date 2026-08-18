@@ -1,7 +1,7 @@
-// frontend/src/context/AuthContext.jsx - React Auth Context & Provider
+// frontend/src/context/AuthContext.jsx - Enterprise React Auth Context & Provider
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 
@@ -84,7 +84,18 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, refreshToken, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        refreshToken,
+        loading,
+        login,
+        register,
+        logout,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
