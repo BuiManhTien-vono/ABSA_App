@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAnalyze } from './hooks/useAnalyze';
 import Header from './components/Header';
 import ReviewInput from './components/ReviewInput';
@@ -5,10 +6,12 @@ import ResultPanel from './components/ResultPanel';
 import AspectTable from './components/AspectTable';
 import InsightCards from './components/InsightCards';
 import JsonViewer from './components/JsonViewer';
+import AuthModal from './components/Auth/AuthModal';
 import './App.css';
 
 function App() {
-  const { result, loading, error, elapsed, analyze, clear } = useAnalyze();
+  const { result, loading, error, elapsed, analyze } = useAnalyze();
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const statusText = loading
     ? 'Đang phân tích...'
@@ -20,7 +23,11 @@ function App() {
 
   return (
     <div className="app">
-      <Header status={statusText} elapsed={result ? elapsed : null} />
+      <Header
+        status={statusText}
+        elapsed={result ? elapsed : null}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
       <main className="main-layout">
         <aside className="sidebar">
           <ReviewInput onAnalyze={analyze} loading={loading} />
@@ -54,6 +61,8 @@ function App() {
           )}
         </section>
       </main>
+
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
   );
 }

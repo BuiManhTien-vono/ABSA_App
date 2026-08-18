@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Cảnh báo môi trường ảo Python
+# Python virtual environment
 .venv/
 venv/
 env/
@@ -19,6 +19,16 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+
+# .NET / C#
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
 # IDEs và Hệ điều hành
 .vscode/
