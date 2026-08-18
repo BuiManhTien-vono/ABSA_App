@@ -1,135 +1,95 @@
-# Hệ Thống Phân Loại Phản Hồi Khách Hàng Đa Sàn TMĐT Bằng AI
+# HIGEN-ABSA: Hệ Thống Phân Tích Cảm Xúc Phân Cấp & Quản Lý Phản Hồi E-Commerce Bằng AI
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Java](https://img.shields.io/badge/Java-17-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.2-green)
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110-teal)
-![React](https://img.shields.io/badge/React-19.0-cyan)
-![Vite](https://img.shields.io/badge/Vite-6.0-purple)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-purple?style=for-the-badge&logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-12.0-blue?style=for-the-badge&logo=csharp)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-red?style=for-the-badge&logo=microsoftsqlserver)
+![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-1.17-blue?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19.0-cyan?style=for-the-badge&logo=react)
+![Vite](https://img.shields.io/badge/Vite-6.0-purple?style=for-the-badge&logo=vite)
+![JWT Auth](https://img.shields.io/badge/Security-JWT%20%2B%20Refresh%20Token-green?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ---
 
-## 1. GIỚI THIỆU
+## 1. GIỚI THIỆU TỔNG QUAN
 
-### Đề tài Nghiên cứu Khoa học
+**HIGEN-ABSA** (**H**ierarchical **I**nsight **G**eneration for **E**-commerce **N**atural Language - **A**spect-**B**ased **S**entiment **A**nalysis) là giải pháp Enterprise AI hỗ trợ quản lý và phân tích phản hồi khách hàng đa sàn Thương mại Điện tử tại Việt Nam (**Shopee**, **Lazada**, **Tiki**, **TikTok Shop**).
 
-### Mục tiêu Đề tài
-
-Dự án hướng tới xây dựng một nền tảng SaaS hoàn chỉnh hỗ trợ các nhà bán hàng (sellers/chủ shop) trên các sàn Thương mại Điện tử lớn tại Việt Nam (**Shopee**, **Lazada**, **TikTok Shop**):
-
-1. **Thu thập & Đồng bộ phản hồi**: Tự động kết nối và đồng bộ đánh giá khách hàng (reviews) theo thời gian thực từ nhiều sàn TMĐT về một hệ thống quản lý tập trung.
-2. **Phân tích khía cạnh chuyên sâu (ABSA - Aspect-Based Sentiment Analysis)**: Thay vì chỉ gắn nhãn tích cực/tiêu cực cho toàn bộ nhận xét, hệ thống sử dụng mô hình học sâu NLP tinh chỉnh (**ViSoBERT**) để trích xuất từng khía cạnh cụ thể (*giao hàng, chất lượng sản phẩm, thái độ phục vụ, giá cả, đóng gói...*) kèm cảm xúc tương ứng.
-3. **Cảnh báo bất thường thời gian thực**: Phát hiện các đợt bùng nổ phản hồi tiêu cực (Negative Spike) theo từng khía cạnh sản phẩm và đẩy cảnh báo tức thì qua WebSocket tới giao diện người dùng.
+### 🎯 Các Tính Năng Nổi Bật:
+1. **Suy Luận Siêu Tốc Bằng C# ONNX Runtime**:
+   - Tối ưu hóa suy luận mô hình học sâu **ViSoBERT** trên C# .NET 10 thông qua ONNX Runtime Engine & bộ mã hóa **SentencePiece Unigram Custom Tokenizer**, không phụ thuộc vào Python runtime khi vận hành.
+2. **Phân Tích Cảm Xúc Phân Cấp (Hierarchical ABSA)**:
+   - Phân loại 5 thể loại lớn (**Macro**: `PRODUCT`, `SHIPPING`, `SERVICE`, `PRICE`, `OTHERS`) và 17 khía cạnh chi tiết (**Micro**: `Appearance_Design`, `Delivery_Speed`, `Customer_Support`, v.v.).
+3. **Trích Xuất Bằng Chứng & Quy Tắc Ghi Đè (Evidence Spans & Domain Overrides)**:
+   - Trích xuất chính xác vị trí ký tự (`evidence_start`, `evidence_end`) của từ ngữ làm căn cứ dự đoán và áp dụng quy tắc ngôn ngữ chuyên biệt cho thị trường E-commerce Việt Nam.
+4. **Tự Động Sinh Insight Cho Nhà Bán Hàng (Insight Engine)**:
+   - Tự động tổng hợp **Tóm tắt cảm nhận** (*Customer Insight*), **Nguyên nhân cốt lõi** (*Root Cause*), **Khuyến nghị cải thiện** (*Business Recommendation*) và **Câu phản hồi mẫu** (*Suggested Seller Response*).
+5. **Hệ Thống Cơ Sở Dữ Liệu SQL Server & Tự Động Mở Ticket Khiếu Nại**:
+   - Lưu trữ tự động 14 bảng quan hệ trên SQL Server. Bài đánh giá tiêu cực (`NEG`) được tự động khởi tạo **Ticket CSKH** cho nhân viên xử lý.
+6. **Bảo Mật RESTful Enterprise Auth (JWT + Refresh Token Rotation)**:
+   - Mã hóa mật khẩu chuẩn **BCrypt**, cơ chế **Access Token (60 phút)** + **Refresh Token Rotation (lưu vết IP/thiết bị)** và phân quyền vai trò (**RBAC**: `ADMIN`, `STORE_MANAGER`, `CSKH_STAFF`).
 
 ---
 
 ## 2. KIẾN TRÚC HỆ THỐNG
 
-Hệ thống được thiết kế theo kiến trúc **3-Tier Phân tán (Microservices/Service-Oriented)** nhằm đảm bảo tính mở rộng, bảo mật và tách biệt nghiệp vụ:
+Ứng dụng được thiết kế theo kiến trúc High-Throughput RESTful Service với C# .NET 10 đóng vai trò Core Backend tập trung:
 
 ```mermaid
 graph TD
     subgraph Client Layer
-        FE[Frontend - React/Vite SPA<br/>Port 5173]
+        FE[Frontend - React 19 / Vite 6 SPA<br/>Port 5173]
     end
 
-    subgraph Core Application Layer
-        BJ[Backend Java - Spring Boot 3<br/>Port 8080]
-        DB[(PostgreSQL 16 Database<br/>Port 5432)]
-        Flyway[Flyway Migration Engine]
+    subgraph Core Application Layer (.NET 10)
+        API[C# ASP.NET Core Web API<br/>Port 8001]
+        Tokenizer[SentencePiece Unigram Tokenizer]
+        ONNXEngine[ONNX Runtime Inference Engine]
+        EF[Entity Framework Core 10]
+        Auth[Enterprise JWT & BCrypt Auth]
     end
 
-    subgraph Internal AI Microservice
-        AI[AI Service - FastAPI / PyTorch<br/>Port 8000]
-        Model[ViSoBERT ABSA Model v8]
+    subgraph Storage Layer
+        DB[(SQL Server Database<br/>HigenAbsaDb)]
+        Models[AI Weights - best_model.onnx<br/>ai-service/models/]
     end
 
-    FE -->|REST API / Bearer JWT| BJ
-    FE <-->|STOMP WebSocket /ws/notifications| BJ
-    BJ -->|Spring Data JPA| DB
-    Flyway -->|V1__init_schema.sql| DB
-    BJ -->|Internal HTTP / X-Internal-Token| AI
-    AI -->|Inference Engine| Model
+    FE -->|REST API / Bearer JWT| API
+    API --> Tokenizer
+    Tokenizer --> ONNXEngine
+    ONNXEngine -->|Loads Weights| Models
+    API --> Auth
+    API --> EF
+    EF -->|Queries / Auto Persistence| DB
 ```
 
-### Vai trò các thành phần
-
-1. **Frontend (`frontend/`)**:
-   * Single Page Application (SPA) xây dựng trên React 19 và Vite 6.
-   * Giao diện người dùng hiện đại (Dark Mode), quản lý phiên làm việc JWT, biểu đồ trực quan hóa dữ liệu (Recharts), tích hợp client WebSocket STOMP nhận thông báo thời gian thực.
-2. **Backend chính (`backend-java/`)**:
-   * Sử dụng Spring Boot 3.3.2 (Java 17).
-   * Đảm nhận toàn bộ nghiệp vụ nền tảng: Xác thực JWT, Quản lý User/Shop/Product/Review/Report, Tích hợp OAuth 2.0 đa sàn (Shopee, Lazada, TikTok), Tiến trình chạy ngầm Polling Review, Đẩy tin nhắn WebSocket.
-3. **Internal AI Service (`ai-service/`)**:
-   * Xây dựng trên Python 3.11 & FastAPI.
-   * Đóng vai trò microservice nội bộ thực hiện tác vụ nặng: Tải mô hình `visobert_absa_v8` vào bộ nhớ, tính toán suy luận (inference) phân loại khía cạnh & cảm xúc.
-   * Được bảo vệ bằng `InternalTokenMiddleware` (chỉ cho phép `backend-java` gọi qua header `X-Internal-Token`).
-
 ---
 
-## 3. TECH STACK
-
-Công nghệ được sử dụng chính xác từ cấu hình hiện tại của dự án:
-
-| Thành phần | Công nghệ / Thư viện | Phiên bản |
-| :--- | :--- | :--- |
-| **Backend Java** | Java JDK | 17 |
-| | Spring Boot Framework | 3.3.2 |
-| | Spring Security | 6.x |
-| | Spring Data JPA / Hibernate | 6.x |
-| | JJWT (Java JWT) | 0.12.6 |
-| | Flyway Migration | 10.x |
-| | PostgreSQL Driver | 42.x |
-| | Lombok | Latest |
-| **AI Microservice** | Python | 3.11+ |
-| | FastAPI | >= 0.110 |
-| | Uvicorn | >= 0.27 |
-| | PyTorch | Latest |
-| | HuggingFace Transformers | >= 4.40.0 |
-| | Pydantic | >= 2.0 |
-| **Frontend** | React | ^19.0.0 |
-| | Vite | ^6.0.0 |
-| | React Router DOM | ^7.1.1 |
-| | Recharts | ^2.15.0 |
-| | @stomp/stompjs | ^7.0.0 |
-| | Lucide React | ^0.469.0 |
-| **Cơ sở dữ liệu** | PostgreSQL | 16-alpine |
-
----
-
-## 4. CẤU TRÚC THƯ MỤC
+## 3. CẤU TRÚC THƯ MỤC DỰ ÁN
 
 ```text
-ABSA_App/
-├── docker-compose.yml                # Dynamic multi-container setup (Full Stack)
-├── docker-compose.dev.yml            # Local development PostgreSQL container setup
-├── ai-service/                       # Microservice Python NLP/ABSA
-│   ├── app/                          # Code chính: main.py, config.py, middleware.py, api/, core/
-│   ├── models/visobert_absa_v8/      # Trọng số mô hình AI & label configuration
-│   ├── requirements.txt              # Khai báo phụ thuộc Python
-│   └── run.py                        # Launch script FastAPI/Uvicorn
-├── backend-java/                     # Core Business Backend (Spring Boot)
-│   ├── pom.xml                       # Maven build configuration
-│   ├── src/main/java/com/feedbackai/ # Source code Java theo chuẩn Package-by-Layer
-│   │   ├── entity/                   # JPA Entities (User, Shop, Product, Review, ReviewAspect, Alert...)
-│   │   ├── repository/               # Spring Data JPA Repositories
-│   │   ├── dto/                      # Request / Response DTOs
-│   │   ├── service/                  # Business Logic & OAuth Handlers Strategy
-│   │   ├── controller/               # REST Controllers
-│   │   ├── aiclient/                 # HTTP Client gọi ai-service & Polling Scheduler
-│   │   ├── notification/             # WebSocket Notification Service
-│   │   ├── config/                   # Security, JWT, CORS, WebSocket config
-│   │   └── common/                   # Shared response wrappers & Global Exception Handler
-│   └── src/main/resources/           # application.yml & db/migration/V1__init_schema.sql
-├── frontend/                         # React SPA Single Page Application
+HIGEN-ABSA-App/
+├── backend-dotnet/                       # Core Business & Inference Backend (.NET 10)
+│   └── HigenAbsa.Api/
+│       ├── Controllers/                  # AuthController, InferenceController
+│       ├── Core/                         # TextUtils, Taxonomy, Postprocess, DomainOverrides
+│       ├── Data/                         # EF Core AppDbContext & 14 Entity classes
+│       │   └── Entities/                 # Core, AI, Response, Security Entities
+│       ├── Models/                       # DTOs, AuthDtos, Requests, Options
+│       ├── Services/                     # ModelBundle, InferenceService, ViSoBertTokenizer
+│       │   └── Auth/                     # JwtTokenService, AuthService
+│       ├── Program.cs                    # ASP.NET Core Startup & Swagger Bearer Auth
+│       └── appsettings.json              # ConnectionStrings & JWT Config
+├── ai-service/                           # Pipeline Lưu trữ & Export Mô hình AI
+│   ├── models/visobert_absa_v8/          # ONNX model (best_model.onnx, best_model.onnx.data) & Tokenizer
+│   └── export_onnx.py                    # Script export PyTorch sang ONNX format
+├── frontend/                             # Giao diện SPA React 19 + Vite 6
 │   ├── src/
-│   │   ├── components/               # UI components (Layout, Common, Charts)
-│   │   ├── pages/                    # Các trang giao diện (Overview, Products, Reviews, Connect...)
-│   │   ├── services/                 # API Client & Services layer
-│   │   ├── context/                  # AuthContext
-│   │   └── hooks/                    # Custom Hooks (useAuth, useWebSocket)
+│   │   ├── api/                          # API Client tự động đính kèm Bearer Token
+│   │   ├── components/                   # ReviewInput, AspectTable, InsightCards, AuthModal
+│   │   ├── context/                      # AuthContext & AuthProvider
+│   │   ├── hooks/                        # Custom Hooks (useAnalyze, useAuth)
+│   │   └── pages/                        # Multi-page Views & Overview Dashboard
 │   ├── package.json
 │   └── vite.config.js
 └── README.md
@@ -137,283 +97,83 @@ ABSA_App/
 
 ---
 
-## 5. YÊU CẦU HỆ THỐNG (PREREQUISITES)
+## 4. BẢNG CƠ SỞ DỮ LIỆU SQL SERVER (DATABASE SCHEMA)
 
-Để khởi chạy hệ thống ở môi trường phát triển (Development) hoặc sản xuất (Production), máy tính cần cài đặt:
+Cơ sở dữ liệu SQL Server (`HigenAbsaDb`) gồm 14 bảng chia thành 5 phân khu nghiệp vụ:
 
-* **Java Development Kit (JDK)**: Version 17 trở lên.
-* **Node.js**: Version 18.x hoặc 20.x trở lên (kèm `npm` v9+).
-* **Python**: Version 3.10 hoặc 3.11.
-* **PostgreSQL**: Version 16 (hoặc Docker Desktop).
-* **Docker & Docker Compose**: (Tùy chọn nếu chạy toàn bộ hệ thống bằng Container).
+| Phân khu Nghiệp vụ | Danh sách Bảng | Mô tả |
+| :--- | :--- | :--- |
+| **1. Core & Sync Domain** | `Platforms`, `StoreConnections`, `Products`, `Customers`, `Reviews` | Lưu trữ gian hàng đa sàn, sản phẩm, khách hàng và bài đánh giá thô. |
+| **2. AI Processing Domain** | `ReviewAIAnalysis`, `ReviewAspects`, `ReviewKeywords` | Lưu Cảm xúc tổng quan, Insights tự sinh, Bằng chứng (Spans) và Khía cạnh phân cấp. |
+| **3. Response Management** | `ResponseTemplates`, `AutomationRules`, `ReviewResponses` | Quản lý mẫu phản hồi, luật trả lời tự động và lịch sử gửi câu trả lời. |
+| **4. CSKH Ticketing** | `Tickets` | Tự động mở Ticket khiếu nại cho các đánh giá 1-3 sao hoặc tiêu cực (`NEG`). |
+| **5. Security & Audit** | `SystemUsers`, `RefreshTokens`, `AuditLogs` | Quản lý tài khoản, mật khẩu băm BCrypt, JWT Refresh Tokens và nhật ký thao tác. |
 
 ---
 
-## 6. HƯỚNG DẪN CÀI ĐẶT & CHẠY (GETTING STARTED)
+## 5. HƯỚNG DẪN KHỞI CHẠY (GETTING STARTED)
 
-### Cách 1: Chạy từng Service độc lập (Dev Local)
+### Yêu cầu Tiền đề (Prerequisites)
+- **.NET SDK**: Version 10.0 trở lên.
+- **Node.js**: Version 18.x / 20.x trở lên (`npm` v9+).
+- **SQL Server**: SQL Server LocalDB hoặc SQL Server 2019/2022 Express.
 
-#### Bước 1: Khởi chạy Database PostgreSQL
+---
 
-Chạy PostgreSQL dev container bằng `docker-compose.dev.yml`:
-
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-#### Bước 2: Khởi chạy `ai-service` (Python)
+### Bước 1: Khởi chạy Backend C# (.NET 10 API)
 
 ```bash
-cd ai-service
+cd backend-dotnet/HigenAbsa.Api
 
-# Tạo môi trường ảo venv
-python -m venv venv
-# Windows:
-.\venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-# Cài đặt các thư viện
-pip install -r requirements.txt
-
-# Tạo file .env từ .env.example
-copy .env.example .env
-
-# Tải trọng số mô hình AI (best_model.pt)
-python scripts/download_model.py
-
-# Chạy server AI
-python run.py
-# Server chạy tại http://localhost:8000
+# Khởi chạy server API (Tự động tạo DB HigenAbsaDb trên SQL Server và nạp ONNX Model)
+dotnet run --urls "http://0.0.0.0:8001"
 ```
 
-#### Bước 3: Khởi chạy `backend-java` (Spring Boot)
+- **API Base URL**: `http://localhost:8001`
+- **Swagger UI Interactive Docs**: `http://localhost:8001/swagger`
 
-```bash
-cd backend-java
+---
 
-# Biên dịch dự án
-mvn clean compile
-
-# Chạy ứng dụng Spring Boot
-mvn spring-boot:run
-# Server chạy tại http://localhost:8080
-```
-
-#### Bước 4: Khởi chạy `frontend` (React/Vite)
+### Bước 2: Khởi chạy Frontend React
 
 ```bash
 cd frontend
 
-# Cài đặt các gói phụ thuộc
+# Cài đặt thư viện
 npm install
 
-# Khởi chạy Vite dev server
+# Khởi chạy Vite Dev Server
 npm run dev
-# Ứng dụng chạy tại http://localhost:5173
 ```
+
+- **Frontend App**: `http://localhost:5173`
 
 ---
 
-### Cách 2: Khởi chạy Toàn bộ Hệ thống bằng Docker Compose
+## 6. TÀI LIỆU API ENDPOINTS
 
-Chỉ cần một lệnh duy nhất để build và khởi chạy cả 4 services (`postgres`, `ai-service`, `backend-java`, `frontend`):
+### 🔑 Authentication Endpoints (`/api/v1/auth/`)
 
-```bash
-docker compose up --build -d
-```
+| Method | Endpoint | Yêu cầu Auth | Mô tả |
+| :--- | :--- | :---: | :--- |
+| `POST` | `/api/v1/auth/register` | Public | Đăng ký tài khoản mới (Mã hóa mật khẩu BCrypt) |
+| `POST` | `/api/v1/auth/login` | Public | Đăng nhập hệ thống, nhận Access Token (JWT) & Refresh Token |
+| `POST` | `/api/v1/auth/refresh-token` | Public | Đổi Access Token mới thông qua Refresh Token Rotation |
+| `POST` | `/api/v1/auth/logout` | Public | Thu hồi Refresh Token |
+| `GET` | `/api/v1/auth/me` | `[Authorize]` | Lấy thông tin Profile tài khoản đang đăng nhập |
 
-* **Frontend**: `http://localhost:5173`
-* **Backend Java**: `http://localhost:8080`
-* **AI Service**: `http://localhost:8000`
+### 🤖 Inference & Insight Endpoints
 
----
-
-## 7. BIẾN MÔI TRƯỜNG (ENVIRONMENT VARIABLES)
-
-### 1. AI Service (`ai-service/.env`)
-
-| Biến môi trường | Mặc định | Mô tả |
+| Method | Endpoint | Mô tả |
 | :--- | :--- | :--- |
-| `ABSA_MODEL_DIR` | `models/visobert_absa_v8` | Đường dẫn tới thư mục lưu trọng số mô hình AI |
-| `ABSA_DEVICE` | `auto` | Thiết bị tính toán (`auto`, `cuda`, `cpu`) |
-| `ABSA_BATCH_SIZE` | `16` | Kích thước batch cho suy luận AI |
-| `ABSA_HOST` | `0.0.0.0` | IP lắng nghe của AI Server |
-| `ABSA_PORT` | `8000` | Port chạy AI Server |
-| `INTERNAL_TOKEN` | `changeme` | Token xác thực nội bộ giữa backend-java và ai-service |
-
-### 2. Backend Java (`backend-java/src/main/resources/application.yml`)
-
-| Biến môi trường | Mặc định | Mô tả |
-| :--- | :--- | :--- |
-| `DB_HOST` | `localhost` | Host PostgreSQL |
-| `DB_PORT` | `5432` | Port PostgreSQL |
-| `DB_NAME` | `feedbackai` | Tên Cơ sở dữ liệu |
-| `DB_USER` | `feedbackai` | Username DB |
-| `DB_PASSWORD` | `feedbackai123` | Password DB |
-| `JWT_SECRET` | *(chuỗi bí mật 256-bit)* | Mã khóa bí mật ký và xác thực JWT |
-| `AI_SERVICE_URL` | `http://localhost:8000` | Địa chỉ AI Service |
-| `INTERNAL_TOKEN` | `changeme` | Token nội bộ gửi sang AI Service |
-| `FRONTEND_URL` | `http://localhost:5173` | Origin được phép CORS |
-| `SHOPEE_CLIENT_ID` | `""` | App Key OAuth Shopee |
-| `LAZADA_CLIENT_ID` | `""` | App Key OAuth Lazada |
-| `TIKTOK_CLIENT_ID` | `""` | App Key OAuth TikTok Shop |
-
-### 3. Frontend (`frontend/.env`)
-
-| Biến môi trường | Mặc định | Mô tả |
-| :--- | :--- | :--- |
-| `VITE_API_BASE_URL` | `http://localhost:8080/api` | Base URL gọi REST API Backend Java |
-| `VITE_WS_URL` | `ws://localhost:8080/ws/notifications` | URL kết nối STOMP WebSocket |
+| `GET` | `/health` | Kiểm tra trạng thái hoạt động của C# Server, ONNX Model và SQL Server DB |
+| `GET` | `/labels` | Lấy danh sách nhãn Macro, Micro, Sentiment và cấu hình ngưỡng cắt |
+| `POST` | `/predict` | Phân tích 1 bài đánh giá đơn lẻ (Tự động lưu vào SQL Server DB) |
+| `POST` | `/predict/batch` | Phân tích hàng loạt danh sách đánh giá cùng lúc |
+| `POST` | `/api/infer` | Endpoint hỗ trợ tương thích legacy payload |
 
 ---
 
-## 8. TÀI LIỆU API (API DOCUMENTATION)
+## 7. GIẤY PHÉP (LICENSE)
 
-### Endpoints Chính của `backend-java` (Public/Protected)
-
-| Method | HTTP Path | Mô tả | Yêu cầu Auth |
-| :--- | :--- | :--- | :---: |
-| `POST` | `/api/auth/register` | Đăng ký tài khoản người dùng mới | Public |
-| `POST` | `/api/auth/login` | Đăng nhập hệ thống, nhận JWT Token | Public |
-| `GET` | `/api/auth/me` | Lấy thông tin tài khoản hiện tại | Bearer JWT |
-| `GET` | `/api/shops` | Danh sách các shop E-commerce đã kết nối | Bearer JWT |
-| `DELETE` | `/api/shops/{id}` | Ngắt kết nối shop | Bearer JWT |
-| `GET` | `/api/shops/connect/{platform}` | Lấy URL ủy quyền OAuth (Shopee/Lazada/TikTok) | Bearer JWT |
-| `GET` | `/api/shops/callback/{platform}` | Callback nhận authorization code và đổi token | Public |
-| `GET` | `/api/products` | Danh sách sản phẩm của người dùng | Bearer JWT |
-| `GET` | `/api/products/{id}` | Chi tiết sản phẩm | Bearer JWT |
-| `GET` | `/api/products/{id}/top-aspects` | Top các khía cạnh nhận phản hồi nhiều nhất | Bearer JWT |
-| `GET` | `/api/products/{id}/reviews` | Danh sách đánh giá sản phẩm (kèm khía cạnh ABSA) | Bearer JWT |
-| `GET` | `/api/reviews/latest` | Dòng thời gian các đánh giá mới nhất | Bearer JWT |
-| `GET` | `/api/alerts` | Danh sách cảnh báo cho người dùng | Bearer JWT |
-| `PATCH` | `/api/alerts/{id}/read` | Đánh dấu cảnh báo đã đọc | Bearer JWT |
-| `PATCH` | `/api/alerts/read-all` | Đánh dấu tất cả cảnh báo đã đọc | Bearer JWT |
-| `GET` | `/api/dashboard/overview` | Tổng hợp chỉ số KPI, xu hướng cảm xúc & thị phần | Bearer JWT |
-
-### Endpoints Nội bộ của `ai-service` (Internal Only)
-
-* **`POST /internal/classify`**: Phân loại khía cạnh & cảm xúc cho 1 review. Yêu cầu header `X-Internal-Token`.
-* **`POST /internal/classify-batch`**: Phân loại theo lô (batch processing) cho danh sách review. Yêu cầu header `X-Internal-Token`.
-* **`GET /health`**: Health check kiểm tra trạng thái tải mô hình AI.
-
----
-
-## 9. SƠ ĐỒ CƠ SỞ DỮ LIỆU (DATABASE SCHEMA)
-
-Cơ sở dữ liệu PostgreSQL gồm 8 bảng chính được khởi tạo và quản lý tự động bởi Flyway (`db/migration/V1__init_schema.sql`):
-
-```mermaid
-erDiagram
-    USERS ||--o{ SHOPS : "sở hữu"
-    USERS ||--o{ REPORTS : "trích xuất"
-    SHOPS ||--o{ PRODUCTS : "quản lý"
-    SHOPS ||--o{ SYNC_LOGS : "ghi nhận"
-    PRODUCTS ||--o{ REVIEWS : "nhận"
-    PRODUCTS ||--o{ ALERTS : "kích hoạt"
-    REVIEWS ||--o{ REVIEW_ASPECTS : "chứa khía cạnh (ABSA)"
-
-    REVIEWS {
-        bigint id PK
-        bigint product_id FK
-        text content
-        integer rating
-        string platform
-        timestamp synced_at
-    }
-
-    REVIEW_ASPECTS {
-        bigint id PK
-        bigint review_id FK
-        string aspect
-        string sentiment
-        double confidence_score
-        timestamp created_at
-    }
-```
-
----
-
-## 10. LUỒNG NGHIỆP VỤ CHÍNH
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Seller as Chủ Shop (User)
-    participant FE as Frontend React
-    participant BJ as Backend Java
-    participant OAuth as Shopee/Lazada/TikTok
-    participant AI as AI Service
-    participant WS as WebSocket STOMP
-
-    Seller->>FE: 1. Đăng nhập & Yêu cầu kết nối sàn
-    FE->>BJ: 2. GET /api/shops/connect/{platform}
-    BJ-->>FE: Trả về OAuth Redirect URL
-    FE->>OAuth: 3. Ủy quyền tài khoản Shop
-    OAuth->>BJ: 4. GET /api/shops/callback/{platform}?code=...
-    BJ->>OAuth: Đổi Code lấy Access/Refresh Token
-    BJ-->>FE: Redirect thành công về Frontend
-
-    loop Scheduled Polling Job (5 phút)
-        BJ->>BJ: Poll đánh giá mới từ sàn TMĐT
-        BJ->>AI: POST /internal/classify-batch (chứa review content)
-        AI-->>BJ: Response list aspects (khía cạnh, sentiment, score)
-        BJ->>BJ: Lưu ReviewAspect & Tính tỷ lệ Negative Aspect
-        alt Negative Spike Ratio >= Threshold
-            BJ->>BJ: Tạo bản ghi Alert (CRITICAL/WARNING)
-            BJ->>WS: Push Notification (/topic/alerts)
-            WS-->>FE: Cập nhật giao diện real-time alert pop-up
-        end
-    end
-```
-
----
-
-## 11. TESTING & KIỂM THỬ
-
-### Backend Java (Unit/Integration Test)
-
-```bash
-cd backend-java
-mvn test
-```
-
-### AI Service Python
-
-```bash
-cd ai-service
-python -m unittest discover tests
-```
-
----
-
-## 12. KẾT QUẢ DỰ ÁN & TÍNH NĂNG ĐÃ HOÀN THÀNH
-
-### Đã hoàn thành
-
-* [x] Tái cấu trúc thành công kiến trúc 3-Tier chuẩn phân tán (`ai-service`, `backend-java`, `frontend`).
-
-* [x] Tích hợp mô hình AI NLP `visobert_absa_v8` phân tích Aspect-Based Sentiment Analysis chuẩn xác cho tiếng Việt.
-* [x] Cơ chế bảo mật Microservice bằng `InternalTokenMiddleware` (`X-Internal-Token`).
-* [x] Tích hợp Flyway Migration quản lý phiên bản cơ sở dữ liệu PostgreSQL.
-* [x] Thiết kế Backend Java theo chuẩn **Package-by-LAYER** chuyên nghiệp.
-* [x] Áp dụng Strategy Pattern (`OAuthHandler`) xử lý ủy quyền OAuth 2.0 đa sàn (Shopee, Lazada, TikTok).
-* [x] Tiến trình chạy ngầm `ReviewPollingScheduler` tự động phát hiện biến động tiêu cực (Negative Spike) dựa trên tỷ lệ khía cạnh.
-* [x] Đẩy dữ liệu thời gian thực qua WebSocket STOMP.
-* [x] Giao diện SPA React 19 (Vite) đầy đủ tính năng và chuyển trang tự động.
-* [x] Đóng gói Docker Compose & Dockerfiles phục vụ triển khai nhanh.
-
----
-
-## 13. ĐÓNG GÓP & LIÊN HỆ
-
-### Nhóm Thực Hiện Đề Tài
-
-* **Sinh viên thực hiện**: [ĐIỀN TÊN TÁC GIẢ / NHÓM NGHIÊN CỨU]
-* **Email liên hệ**: [ĐIỀN EMAIL LIÊN HỆ]
-* **Giảng viên hướng dẫn**: [ĐIỀN TÊN GIẢNG VIÊN HƯỚNG DẪN]
-* **Trường/Viện**: [ĐIỀN TÊN TRƯỜNG KHÓA VIỆN]
-
-### Giấy phép (License)
-
-Dự án được phát hành theo giấy phép **MIT License**. Chi tiết tham khảo tại file `LICENSE`.
+Dự án được phát hành theo giấy phép **MIT License**.
