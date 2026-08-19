@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\backend-dotnet",
+    "\\backend-dotnet\\HigenAbsa.Api",
+    "\\frontend",
+    "\\frontend\\src",
+    "\\frontend\\src\\pages"
+  ],
+  "SelectedNode": "\\docker-compose.yml",
+  "PreviewInSolutionExplorer": false
+}
