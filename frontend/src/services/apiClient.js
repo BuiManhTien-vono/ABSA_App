@@ -1,7 +1,7 @@
 // src/services/apiClient.js
 // Wrapper fetch với auto-inject Bearer Token và xử lý lỗi 401
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.4:5058';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5058';
 
 class ApiClient {
   constructor() {

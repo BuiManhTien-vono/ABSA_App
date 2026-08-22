@@ -9,6 +9,14 @@ using HigenAbsa.Api.Data;
 using HigenAbsa.Api.Data.Entities;
 using HigenAbsa.Api.Services;
 using HigenAbsa.Api.Services.Auth;
+using HigenAbsa.Api.Services.Store;
+using HigenAbsa.Api.Services.Product;
+using HigenAbsa.Api.Services.Customer;
+using HigenAbsa.Api.Services.Review;
+using HigenAbsa.Api.Services.Dashboard;
+using HigenAbsa.Api.Services.Response;
+using HigenAbsa.Api.Services.Ticket;
+using HigenAbsa.Api.Services.Audit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +82,14 @@ builder.Services.AddSingleton<IInferenceService, InferenceService>();
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IResponseService, ResponseService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(opts =>
@@ -133,8 +149,6 @@ using (var scope = app.Services.CreateScope())
         // placeholder hash are repaired once without overwriting later changes.
         const string adminEmail = "admin@higen-absa.com";
         const string adminPassword = "Admin@123";
-        const string legacyPlaceholderHash =
-            "$2a$11$0J/2cWbBqFwS8n0xZ6.37eU8Wj1vTzX1Y9W8V7U6T5S4R3Q2P1O0N";
 
         var admin = db.SystemUsers.SingleOrDefault(user => user.Email == adminEmail);
         if (admin == null)
@@ -152,12 +166,12 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             logger.LogInformation("Development administrator account created.");
         }
-        else if (admin.PasswordHash == legacyPlaceholderHash)
+        else if (!BCrypt.Net.BCrypt.Verify(adminPassword, admin.PasswordHash) || !admin.IsActive)
         {
             admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword);
             admin.IsActive = true;
             db.SaveChanges();
-            logger.LogInformation("Legacy administrator password hash repaired.");
+            logger.LogInformation("Development administrator password hash repaired.");
         }
 
         logger.LogInformation("SQL Server Database initialized successfully.");

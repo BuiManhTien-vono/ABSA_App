@@ -1,13 +1,17 @@
 import { NavLink } from 'react-router-dom';
 import {
   BarChart2,
+  FileText,
+  Headphones,
   LayoutDashboard,
   Link2,
   LogOut,
   MessageSquare,
   Package,
   Settings,
+  Shield,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../context/auth';
 import './Sidebar.css';
@@ -15,15 +19,18 @@ import './Sidebar.css';
 const NAV_ITEMS = [
   { to: '/overview', label: 'Tổng quan', icon: LayoutDashboard },
   { to: '/products', label: 'Sản phẩm', icon: Package },
-  { to: '/reviews', label: 'Phản hồi', icon: MessageSquare },
+  { to: '/reviews', label: 'Phản hồi (Feed)', icon: MessageSquare },
+  { to: '/customers', label: 'Khách hàng', icon: Users },
+  { to: '/tickets', label: 'Ticket CSKH', icon: Headphones },
+  { to: '/templates', label: 'Mẫu & Quy tắc', icon: FileText },
   { to: '/connect', label: 'Kết nối sàn', icon: Link2, connected: true },
-  { to: '/reports', label: 'Báo cáo', icon: BarChart2 },
   { to: '/settings', label: 'Cài đặt', icon: Settings },
 ];
 
 const ROLE_LABELS = {
   ADMIN: 'Quản trị viên',
   STORE_MANAGER: 'Quản lý cửa hàng',
+  CSKH_STAFF: 'Nhân viên CSKH',
   USER: 'Thành viên',
 };
 
@@ -45,6 +52,7 @@ export default function Sidebar() {
     || 'Nguyễn Thanh';
   const role = ROLE_LABELS[user?.role] || user?.role || 'Quản lý cửa hàng';
   const initials = getInitials(displayName) || 'NT';
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <aside className="sidebar-container">
@@ -53,7 +61,7 @@ export default function Sidebar() {
           <Sparkles size={15} />
         </div>
         <div className="sidebar-brand-copy">
-          <span className="sidebar-brand-title">FeedbackAI</span>
+          <span className="sidebar-brand-title">HIGEN-ABSA</span>
           <span className="sidebar-brand-subtitle">TMĐT Analytics</span>
         </div>
       </div>
@@ -75,6 +83,20 @@ export default function Sidebar() {
             </NavLink>
           );
         })}
+
+        {isAdmin && (
+          <>
+            <span className="sidebar-menu-label" style={{ marginTop: '12px' }}>Quản trị</span>
+            <NavLink
+              to="/users"
+              className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              title="Quản lý User"
+            >
+              <Shield size={16} strokeWidth={1.7} />
+              <span className="sidebar-nav-label">Quản lý User</span>
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="sidebar-footer">

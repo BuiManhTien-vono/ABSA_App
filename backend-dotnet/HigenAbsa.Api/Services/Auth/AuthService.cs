@@ -1,8 +1,10 @@
 // Services/Auth/AuthService.cs - Enterprise Authentication & Token Management Service
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
+using HigenAbsa.Api.Core;
 using HigenAbsa.Api.Data;
 using HigenAbsa.Api.Data.Entities;
+using HigenAbsa.Api.Models;
 using HigenAbsa.Api.Models.Auth;
 
 namespace HigenAbsa.Api.Services.Auth;
@@ -14,6 +16,16 @@ public interface IAuthService
     Task<AuthResponse> RefreshTokenAsync(string refreshToken, string ipAddress);
     Task<bool> LogoutAsync(string refreshToken, string ipAddress);
     Task<UserProfileDto?> GetProfileAsync(Guid userId);
+
+    // NV1-A: Admin User CRUD
+    Task<PagedResult<UserListDto>> GetUsersAsync(int page, int pageSize, string? role, string? search);
+    Task<UserProfileDto?> GetUserByIdAsync(Guid id);
+    Task<UserProfileDto> CreateUserAsync(CreateUserRequest request);
+    Task<UserProfileDto?> UpdateUserAsync(Guid id, UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(Guid id);
+
+    // NV1-B: Change Password
+    Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
 }
 
 public class AuthService : IAuthService
@@ -194,6 +206,122 @@ public class AuthService : IAuthService
 
         await _db.SaveChangesAsync();
     }
+
+    // -----------------------------------------------------------------------
+    // NV1-A: Admin User CRUD
+    // -----------------------------------------------------------------------
+
+    public async Task<PagedResult<UserListDto>> GetUsersAsync(int page, int pageSize, string? role, string? search)
+    {
+        var query = _db.SystemUsers.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(role))
+            query = query.Where(u => u.Role == role.ToUpper());
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.ToLower();
+            query = query.Where(u =>
+                u.Email.ToLower().Contains(term) ||
+                u.FullName.ToLower().Contains(term));
+        }
+
+        var pagedQuery = query
+            .OrderByDescending(u => u.CreatedAt)
+            .Select(u => new UserListDto
+            {
+                Id = u.Id,
+                Email = u.Email,
+                FullName = u.FullName,
+                PhoneNumber = u.PhoneNumber,
+                Role = u.Role,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            });
+
+        return await pagedQuery.ToPagedResultAsync(page, pageSize);
+    }
+
+    public async Task<UserProfileDto?> GetUserByIdAsync(Guid id)
+    {
+        var user = await _db.SystemUsers.FindAsync(id);
+        return user == null ? null : MapToUserProfileDto(user);
+    }
+
+    public async Task<UserProfileDto> CreateUserAsync(CreateUserRequest request)
+    {
+        var existingUser = await _db.SystemUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+        if (existingUser != null)
+            throw new InvalidOperationException("Email address is already registered.");
+
+        var user = new SystemUser
+        {
+            Id = Guid.NewGuid(),
+            Email = request.Email.ToLower().Trim(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            FullName = request.FullName.Trim(),
+            PhoneNumber = request.PhoneNumber?.Trim(),
+            Role = request.Role.ToUpper(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.SystemUsers.Add(user);
+        await _db.SaveChangesAsync();
+        return MapToUserProfileDto(user);
+    }
+
+    public async Task<UserProfileDto?> UpdateUserAsync(Guid id, UpdateUserRequest request)
+    {
+        var user = await _db.SystemUsers.FindAsync(id);
+        if (user == null) return null;
+
+        if (!string.IsNullOrWhiteSpace(request.FullName))
+            user.FullName = request.FullName.Trim();
+
+        if (request.PhoneNumber != null)
+            user.PhoneNumber = request.PhoneNumber.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Role))
+            user.Role = request.Role.ToUpper();
+
+        if (request.IsActive.HasValue)
+            user.IsActive = request.IsActive.Value;
+
+        await _db.SaveChangesAsync();
+        return MapToUserProfileDto(user);
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid id)
+    {
+        var user = await _db.SystemUsers.FindAsync(id);
+        if (user == null) return false;
+
+        user.IsActive = false; // Soft delete
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // NV1-B: Change Password
+    // -----------------------------------------------------------------------
+
+    public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        var user = await _db.SystemUsers.FindAsync(userId)
+            ?? throw new InvalidOperationException("User not found.");
+
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+            throw new UnauthorizedAccessException("Current password is incorrect.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Shared Helpers
+    // -----------------------------------------------------------------------
 
     private static UserProfileDto MapToUserProfileDto(SystemUser user) => new()
     {

@@ -119,6 +119,35 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
         return Ok(profile);
     }
 
+    /// <summary>
+    /// Change the authenticated user's password (requires current password verification).
+    /// </summary>
+    [Authorize]
+    [HttpPut("change-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword([FromBody] Models.Auth.ChangePasswordRequest request)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { detail = "Invalid user claim." });
+
+        try
+        {
+            await authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+            return Ok(new { message = "Password changed successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+    }
+
     private string GetClientIpAddress()
     {
         if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
