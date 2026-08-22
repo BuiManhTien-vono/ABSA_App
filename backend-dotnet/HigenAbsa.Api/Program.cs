@@ -6,10 +6,17 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using HigenAbsa.Api;
 using HigenAbsa.Api.Data;
+using HigenAbsa.Api.Data.Entities;
 using HigenAbsa.Api.Services;
 using HigenAbsa.Api.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Keep local development logging portable. The Windows Event Log provider can
+// require elevated permissions and must not prevent the API from starting.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 // -----------------------------------------------------------------------
 // Configuration
@@ -120,6 +127,39 @@ using (var scope = app.Services.CreateScope())
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         logger.LogInformation("Connecting to SQL Server database: {Connection}", connectionString);
         db.Database.EnsureCreated();
+
+        // Bootstrap the development administrator outside EF model seeding so
+        // the BCrypt hash is real and existing databases with the legacy
+        // placeholder hash are repaired once without overwriting later changes.
+        const string adminEmail = "admin@higen-absa.com";
+        const string adminPassword = "Admin@123";
+        const string legacyPlaceholderHash =
+            "$2a$11$0J/2cWbBqFwS8n0xZ6.37eU8Wj1vTzX1Y9W8V7U6T5S4R3Q2P1O0N";
+
+        var admin = db.SystemUsers.SingleOrDefault(user => user.Email == adminEmail);
+        if (admin == null)
+        {
+            db.SystemUsers.Add(new SystemUser
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Email = adminEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+                FullName = "System Administrator",
+                Role = "ADMIN",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+            db.SaveChanges();
+            logger.LogInformation("Development administrator account created.");
+        }
+        else if (admin.PasswordHash == legacyPlaceholderHash)
+        {
+            admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword);
+            admin.IsActive = true;
+            db.SaveChanges();
+            logger.LogInformation("Legacy administrator password hash repaired.");
+        }
+
         logger.LogInformation("SQL Server Database initialized successfully.");
     }
     catch (Exception ex)

@@ -74,21 +74,5 @@ public class AppDbContext : DbContext
             new Platform { Id = 4, Code = "TIKTOK_SHOP", Name = "TikTok Shop Việt Nam", IsActive = true }
         );
 
-        var adminId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        // Hash for "Admin@123"
-        string adminPasswordHash = "$2a$11$0J/2cWbBqFwS8n0xZ6.37eU8Wj1vTzX1Y9W8V7U6T5S4R3Q2P1O0N";
-
-        modelBuilder.Entity<SystemUser>().HasData(
-            new SystemUser
-            {
-                Id = adminId,
-                Email = "admin@higen-absa.com",
-                PasswordHash = adminPasswordHash,
-                FullName = "System Administrator",
-                Role = "ADMIN",
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-            }
-        );
     }
 }

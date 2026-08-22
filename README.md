@@ -126,11 +126,11 @@ Cơ sở dữ liệu SQL Server (`HigenAbsaDb`) gồm 14 bảng chia thành 5 ph
 cd backend-dotnet/HigenAbsa.Api
 
 # Khởi chạy server API (Tự động tạo DB HigenAbsaDb trên SQL Server và nạp ONNX Model)
-dotnet run --urls "http://0.0.0.0:8001"
+dotnet run --urls "http://0.0.0.0:5058"
 ```
 
-- **API Base URL**: `http://localhost:8001`
-- **Swagger UI Interactive Docs**: `http://localhost:8001/swagger`
+- **API Base URL (LAN)**: `http://172.20.10.4:5058`
+- **Swagger UI Interactive Docs**: `http://172.20.10.4:5058/swagger`
 
 ---
 
@@ -146,7 +146,7 @@ npm install
 npm run dev
 ```
 
-- **Frontend App**: `http://localhost:5173`
+- **Frontend App (LAN)**: `http://172.20.10.4:5173`
 
 ---
 

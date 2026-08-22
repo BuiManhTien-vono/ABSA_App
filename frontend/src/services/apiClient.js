@@ -1,7 +1,7 @@
 // src/services/apiClient.js
 // Wrapper fetch với auto-inject Bearer Token và xử lý lỗi 401
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.4:5058';
 
 class ApiClient {
   constructor() {
@@ -28,7 +28,10 @@ class ApiClient {
       headers,
     });
 
-    if (response.status === 401) {
+    // A 401 from a protected request means the saved session expired. Login
+    // itself can legitimately return 401 for wrong credentials and must stay
+    // on the form so its error can be displayed instead of forcing a reload.
+    if (response.status === 401 && token && path !== '/api/v1/auth/login') {
       localStorage.removeItem('absa_token');
       localStorage.removeItem('absa_refresh_token');
       localStorage.removeItem('absa_user');
