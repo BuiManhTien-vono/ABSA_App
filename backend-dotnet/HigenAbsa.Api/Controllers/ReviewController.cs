@@ -8,7 +8,7 @@ namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/reviews")]
-[Authorize]
+[AllowAnonymous]
 public class ReviewController(IReviewService reviewService) : ControllerBase
 {
     /// <summary>

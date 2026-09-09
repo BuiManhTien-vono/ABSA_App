@@ -144,6 +144,59 @@ public class InferenceController(IInferenceService service, IServiceProvider ser
     }
 
     // -----------------------------------------------------------------------
+    // Excel / CSV File Upload Analysis
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Upload an Excel (.xlsx, .xls, .csv) file containing product review comments to run AI ABSA analysis.
+    /// </summary>
+    [HttpPost("/api/v1/inference/upload-excel")]
+    [ProducesResponseType(typeof(Models.Inference.ExcelAnalysisResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadExcelReviewFile(
+        IFormFile file,
+        [FromQuery] bool saveToDb = true,
+        [FromServices] Services.Inference.IExcelAnalysisService excelService = null!)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { detail = "Vui lòng chọn một file Excel (.xlsx, .xls, .csv) để tải lên." });
+        }
+
+        string ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext != ".xlsx" && ext != ".xls" && ext != ".csv")
+        {
+            return BadRequest(new { detail = "Định dạng file không hỗ trợ. Vui lòng tải lên file Excel (.xlsx, .xls) hoặc CSV (.csv)." });
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await excelService.ProcessExcelStreamAsync(stream, file.FileName, saveToDb);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { detail = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error processing uploaded Excel review file: {FileName}", file.FileName);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { detail = $"Lỗi xử lý file Excel: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Download a sample CSV/Excel template file for filling in product reviews.
+    /// </summary>
+    [HttpGet("/api/v1/inference/excel-template")]
+    public IActionResult DownloadSampleExcelTemplate([FromServices] Services.Inference.IExcelAnalysisService excelService)
+    {
+        var fileBytes = excelService.GenerateSampleTemplateBytes();
+        return File(fileBytes, "text/csv", "Mau_Danh_Gia_San_Pham.csv");
+    }
+
+    // -----------------------------------------------------------------------
     // Database Persistence Helper
     // -----------------------------------------------------------------------
 

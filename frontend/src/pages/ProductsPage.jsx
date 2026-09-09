@@ -56,44 +56,52 @@ export default function ProductsPage() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-            {products.map((p) => (
-              <div key={p.id} style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '16px', flex: 1 }}>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <img
-                      src={p.imageUrl || 'https://via.placeholder.com/60?text=SP'}
-                      alt={p.name}
-                      style={{ width: '60px', height: '60px', borderRadius: '6px', objectFit: 'cover', background: '#f1f5f9' }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: '11px', background: '#e0e7ff', color: '#3730a3', padding: '1px 6px', borderRadius: '4px', fontWeight: 500 }}>
-                        {p.storeName || 'Shop'}
+            {products.map((p) => {
+              const imgUrl = p.imageUrl || p.image_url || 'https://via.placeholder.com/60?text=SP';
+              const storeName = p.storeName || p.store_name || 'Shop';
+              const rating = p.averageRating ?? p.average_rating ?? 5.0;
+              const rCount = p.reviewCount ?? p.review_count ?? 0;
+              const prodUrl = p.productUrl || p.product_url;
+
+              return (
+                <div key={p.id} style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '16px', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <img
+                        src={imgUrl}
+                        alt={p.name}
+                        style={{ width: '60px', height: '60px', borderRadius: '6px', objectFit: 'cover', background: '#f1f5f9' }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: '11px', background: '#e0e7ff', color: '#3730a3', padding: '1px 6px', borderRadius: '4px', fontWeight: 500 }}>
+                          {storeName}
+                        </span>
+                        <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', margin: '4px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.name}>
+                          {p.name}
+                        </h3>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>SKU: {p.sku || 'N/A'}</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#eab308', fontWeight: 600 }}>
+                        <Star size={14} fill="currentColor" /> {typeof rating === 'number' ? rating.toFixed(1) : rating}
                       </span>
-                      <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', margin: '4px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.name}>
-                        {p.name}
-                      </h3>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>SKU: {p.sku || 'N/A'}</div>
+                      <span style={{ color: '#64748b' }}>{rCount} đánh giá</span>
                     </div>
                   </div>
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#eab308', fontWeight: 600 }}>
-                      <Star size={14} fill="currentColor" /> {p.averageRating ? p.averageRating.toFixed(1) : '5.0'}
-                    </span>
-                    <span style={{ color: '#64748b' }}>{p.reviewCount} đánh giá</span>
+                  <div style={{ background: '#f8fafc', padding: '8px 16px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Link to={`/products/${p.id}`} style={{ fontSize: '12px', color: '#4f46e5', fontWeight: 500, textDecoration: 'none' }}>
+                      Xem phân tích AI →
+                    </Link>
+                    {prodUrl && (
+                      <a href={prodUrl} target="_blank" rel="noreferrer" style={{ color: '#94a3b8' }}>
+                        <ExternalLink size={13} />
+                      </a>
+                    )}
                   </div>
                 </div>
-                <div style={{ background: '#f8fafc', padding: '8px 16px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Link to={`/products/${p.id}`} style={{ fontSize: '12px', color: '#4f46e5', fontWeight: 500, textDecoration: 'none' }}>
-                    Xem phân tích AI →
-                  </Link>
-                  {p.productUrl && (
-                    <a href={p.productUrl} target="_blank" rel="noreferrer" style={{ color: '#94a3b8' }}>
-                      <ExternalLink size={13} />
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}

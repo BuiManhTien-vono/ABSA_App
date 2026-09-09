@@ -15,6 +15,10 @@ export const dashboardService = {
   },
   getNegativeSpikes: (days = 7) => apiClient.get(`/api/v1/dashboard/negative-spikes?days=${days}`),
   getRecentReviews: (count = 10) => apiClient.get(`/api/v1/dashboard/recent-reviews?count=${count}`),
+  getAspectSummary: (storeId = null) => {
+    const query = storeId ? `?storeId=${storeId}` : '';
+    return apiClient.get(`/api/v1/dashboard/aspect-summary${query}`);
+  },
 };
 
 export default dashboardService;

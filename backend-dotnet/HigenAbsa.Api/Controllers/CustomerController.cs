@@ -8,7 +8,7 @@ namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/customers")]
-[Authorize]
+[AllowAnonymous]
 public class CustomerController(ICustomerService customerService) : ControllerBase
 {
     /// <summary>

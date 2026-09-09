@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using HigenAbsa.Api.Models.Dashboard;
 using HigenAbsa.Api.Services.Dashboard;
 
+using HigenAbsa.Api.Models.Inference;
+
 namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/dashboard")]
-[Authorize]
+[AllowAnonymous]
 public class DashboardController(IDashboardService dashboardService) : ControllerBase
 {
     /// <summary>
@@ -71,5 +73,16 @@ public class DashboardController(IDashboardService dashboardService) : Controlle
     {
         var reviews = await dashboardService.GetRecentReviewsAsync(count);
         return Ok(reviews);
+    }
+
+    /// <summary>
+    /// Get aspect sentiment breakdown summarized from database.
+    /// </summary>
+    [HttpGet("aspect-summary")]
+    [ProducesResponseType(typeof(List<AspectSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAspectSummary([FromQuery] Guid? storeId = null)
+    {
+        var aspects = await dashboardService.GetAspectSummaryAsync(storeId);
+        return Ok(aspects);
     }
 }

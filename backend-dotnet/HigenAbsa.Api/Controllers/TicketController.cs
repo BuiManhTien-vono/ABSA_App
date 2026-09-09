@@ -8,7 +8,7 @@ namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/tickets")]
-[Authorize]
+[AllowAnonymous]
 public class TicketController(ITicketService ticketService) : ControllerBase
 {
     /// <summary>

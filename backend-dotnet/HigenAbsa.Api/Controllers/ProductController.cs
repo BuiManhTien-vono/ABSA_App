@@ -9,7 +9,7 @@ namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/products")]
-[Authorize]
+[AllowAnonymous]
 public class ProductController(IProductService productService) : ControllerBase
 {
     /// <summary>

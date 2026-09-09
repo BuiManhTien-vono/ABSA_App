@@ -1,0 +1,215 @@
+/* src/components/AspectMatrix.css - ABSA Category & Aspect Matrix Styles */
+
+.aspect-matrix-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+}
+
+.aspect-matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.aspect-matrix-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aspect-matrix-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.aspect-matrix-title p {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.aspect-filter-clear {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.aspect-filter-clear:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.macro-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+  .macro-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .macro-category-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.macro-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.macro-card:hover {
+  border-color: #818cf8;
+  box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.12);
+  transform: translateY(-2px);
+}
+
+.macro-card.selected {
+  border-color: #6366f1;
+  background: #f5f3ff;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.macro-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.macro-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.macro-card-icon.PRODUCT { background: #e0e7ff; color: #4f46e5; }
+.macro-card-icon.SHIPPING { background: #dcfce7; color: #16a34a; }
+.macro-card-icon.SERVICE { background: #fef3c7; color: #d97706; }
+.macro-card-icon.PRICE { background: #fae8ff; color: #c026d3; }
+.macro-card-icon.OTHERS { background: #f1f5f9; color: #475569; }
+
+.macro-card-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.macro-card-mentions {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.macro-satisfaction-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 6px;
+}
+
+.macro-bar-fill {
+  height: 100%;
+}
+.macro-bar-fill.pos { background: #10b981; }
+.macro-bar-fill.neu { background: #f59e0b; }
+.macro-bar-fill.neg { background: #ef4444; }
+
+.macro-stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.micro-aspects-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.micro-aspects-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.micro-aspect-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.micro-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.micro-pill:hover {
+  border-color: #6366f1;
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+.micro-pill.active {
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+.micro-pill-badge {
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.micro-pill-badge.pos { background: #dcfce7; color: #15803d; }
+.micro-pill-badge.neg { background: #fee2e2; color: #b91c1c; }
+.micro-pill.active .micro-pill-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}

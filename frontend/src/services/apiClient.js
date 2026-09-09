@@ -13,19 +13,27 @@ class ApiClient {
   }
 
   async request(path, options = {}) {
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const isFormData = options.body instanceof FormData;
+    const headers = { ...options.headers };
+
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    let body = options.body;
+    if (body && !isFormData && typeof body !== 'string') {
+      body = JSON.stringify(body);
+    }
+
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...options,
       headers,
+      body,
     });
 
     // A 401 from a protected request means the saved session expired. Login
@@ -41,32 +49,42 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || `Lỗi ${response.status}`);
+      let msg = error.detail || error.message;
+      if (!msg && error.errors && typeof error.errors === 'object') {
+        msg = Object.values(error.errors).flat().join('; ');
+      }
+      throw new Error(msg || `Lỗi ${response.status}`);
+    }
+
+    if (options.responseType === 'blob') {
+      return response.blob();
     }
 
     return response.json();
   }
 
-  get(path) {
-    return this.request(path, { method: 'GET' });
+  get(path, options = {}) {
+    return this.request(path, { method: 'GET', ...options });
   }
 
-  post(path, body) {
+  post(path, body, options = {}) {
     return this.request(path, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body,
+      ...options,
     });
   }
 
-  put(path, body) {
+  put(path, body, options = {}) {
     return this.request(path, {
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
+      body,
+      ...options,
     });
   }
 
-  delete(path) {
-    return this.request(path, { method: 'DELETE' });
+  delete(path, options = {}) {
+    return this.request(path, { method: 'DELETE', ...options });
   }
 }
 

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link2, RefreshCw, Plus, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Link2, RefreshCw, Plus, Trash2, CheckCircle2, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import storeService from '../services/storeService';
+import ExcelUploadModal from '../components/ExcelUploadModal';
 
 export default function ConnectPage() {
   const [platforms, setPlatforms] = useState([]);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showExcelModal, setShowExcelModal] = useState(false);
   const [formData, setFormData] = useState({
     platformId: '',
     storeName: '',
@@ -41,11 +43,16 @@ export default function ConnectPage() {
     setError(null);
     setSubmitting(true);
     try {
+      const pid = parseInt(formData.platformId, 10);
       await storeService.createStore({
-        platformId: parseInt(formData.platformId, 10),
+        platformId: pid,
+        platform_id: pid,
         storeName: formData.storeName,
+        store_name: formData.storeName,
         storeCodeOnPlatform: formData.storeCodeOnPlatform,
+        store_code_on_platform: formData.storeCodeOnPlatform,
         accessToken: formData.accessToken || null,
+        access_token: formData.accessToken || null,
       });
       setShowModal(false);
       setFormData({ platformId: '', storeName: '', storeCodeOnPlatform: '', accessToken: '' });
@@ -76,6 +83,19 @@ export default function ConnectPage() {
     }
   }
 
+  async function handleCreateMockLazada() {
+    try {
+      setLoading(true);
+      await storeService.createMockLazadaStore();
+      alert('Đã kết nối thành công Cửa hàng Mẫu Lazada (7 Sản phẩm & 18+ Đánh giá thực tế đã bóc tách bằng AI)!');
+      loadData();
+    } catch (err) {
+      alert('Tạo cửa hàng mẫu thất bại: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -83,27 +103,66 @@ export default function ConnectPage() {
           <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#1e293b' }}>Quản lý Kết nối Gian hàng</h1>
           <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Kết nối gian hàng từ Shopee, Lazada, Tiki, TikTok Shop</p>
         </div>
-        <button
-          onClick={() => {
-            if (platforms.length > 0) setFormData((f) => ({ ...f, platformId: platforms[0].id }));
-            setShowModal(true);
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: '#4f46e5',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            padding: '8px 16px',
-            fontSize: '13px',
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} /> Kết nối cửa hàng mới
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleCreateMockLazada}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#0284c7',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
+            }}
+          >
+            ⚡ Kết nối Cửa hàng Mẫu Lazada (Mock Test)
+          </button>
+          <button
+            onClick={() => setShowExcelModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#10b981',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <FileSpreadsheet size={16} /> Phân tích từ File Excel (.xlsx)
+          </button>
+          <button
+            onClick={() => {
+              if (platforms.length > 0) setFormData((f) => ({ ...f, platformId: platforms[0].id }));
+              setShowModal(true);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#4f46e5',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} /> Kết nối cửa hàng mới
+          </button>
+        </div>
       </div>
 
       {/* Grid Platform status */}
@@ -269,6 +328,14 @@ export default function ConnectPage() {
           </div>
         </div>
       )}
+
+      <ExcelUploadModal
+        isOpen={showExcelModal}
+        onClose={() => setShowExcelModal(false)}
+        onSuccess={() => {
+          loadData();
+        }}
+      />
     </div>
   );
 }

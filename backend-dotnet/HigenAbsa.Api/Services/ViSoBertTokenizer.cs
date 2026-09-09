@@ -96,7 +96,7 @@ public sealed class ViSoBertTokenizer
     public (long[,] InputIds, long[,] AttentionMask) BatchEncode(IReadOnlyList<string> texts)
     {
         var encoded = texts.Select(Encode).ToList();
-        int maxLen = encoded.Max(e => e.Ids.Count);
+        int maxLen = _maxLength;
         int batch = texts.Count;
 
         var inputIds = new long[batch, maxLen];

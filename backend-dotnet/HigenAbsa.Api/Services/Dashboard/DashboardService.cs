@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using HigenAbsa.Api.Data;
 using HigenAbsa.Api.Models.Dashboard;
 
+using HigenAbsa.Api.Models.Inference;
+
 namespace HigenAbsa.Api.Services.Dashboard;
 
 public interface IDashboardService
@@ -12,6 +14,7 @@ public interface IDashboardService
     Task<List<PlatformDistributionDto>> GetPlatformDistributionAsync(DateTime? dateFrom, DateTime? dateTo);
     Task<List<NegativeSpikeDto>> GetNegativeSpikesAsync(int days);
     Task<List<RecentReviewDto>> GetRecentReviewsAsync(int count);
+    Task<List<AspectSummaryDto>> GetAspectSummaryAsync(Guid? storeId = null);
 }
 
 public class DashboardService : IDashboardService
@@ -201,5 +204,34 @@ public class DashboardService : IDashboardService
                 ReviewCreatedAt = r.ReviewCreatedAt
             })
             .ToListAsync();
+    }
+
+    public async Task<List<AspectSummaryDto>> GetAspectSummaryAsync(Guid? storeId = null)
+    {
+        var query = _db.ReviewAspects
+            .Include(a => a.Review)
+            .AsQueryable();
+
+        if (storeId.HasValue)
+        {
+            query = query.Where(a => a.Review != null && a.Review.StoreId == storeId.Value);
+        }
+
+        var aspects = await query
+            .GroupBy(a => new { a.MacroCategory, a.MicroAspect })
+            .Select(g => new AspectSummaryDto
+            {
+                MacroCategory = g.Key.MacroCategory,
+                MicroAspect = g.Key.MicroAspect,
+                TotalMentions = g.Count(),
+                PositiveMentions = g.Count(x => x.Sentiment == "POS"),
+                NeutralMentions = g.Count(x => x.Sentiment == "NEU"),
+                NegativeMentions = g.Count(x => x.Sentiment == "NEG")
+            })
+            .OrderByDescending(a => a.TotalMentions)
+            .Take(15)
+            .ToListAsync();
+
+        return aspects;
     }
 }

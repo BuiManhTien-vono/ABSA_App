@@ -17,8 +17,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/auth';
 
 function RequireAuth() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  return <Outlet />;
 }
 
 export default function App() {

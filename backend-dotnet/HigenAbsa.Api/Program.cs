@@ -17,6 +17,9 @@ using HigenAbsa.Api.Services.Dashboard;
 using HigenAbsa.Api.Services.Response;
 using HigenAbsa.Api.Services.Ticket;
 using HigenAbsa.Api.Services.Audit;
+using HigenAbsa.Api.Models.Lazada;
+using HigenAbsa.Api.Services.Lazada;
+using HigenAbsa.Api.Services.Inference;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +40,9 @@ if (!Path.IsPathRooted(absaOptions.ModelDir))
     absaOptions.ModelDir = Path.GetFullPath(
         Path.Combine(builder.Environment.ContentRootPath, absaOptions.ModelDir));
 }
+
+var lazadaOptions = builder.Configuration.GetSection(LazadaOptions.SectionName).Get<LazadaOptions>()
+    ?? new LazadaOptions();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=(localdb)\\mssqllocaldb;Database=HigenAbsaDb;Trusted_Connection=True;TrustServerCertificate=True;";
@@ -76,9 +82,16 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpClient();
 builder.Services.AddSingleton(absaOptions);
+builder.Services.AddSingleton(lazadaOptions);
 builder.Services.AddSingleton<ModelBundle>();
 builder.Services.AddSingleton<IInferenceService, InferenceService>();
+
+builder.Services.AddSingleton<ILazadaSignatureService, LazadaSignatureService>();
+builder.Services.AddScoped<ILazadaAuthService, LazadaAuthService>();
+builder.Services.AddScoped<ILazadaApiService, LazadaApiService>();
+builder.Services.AddScoped<IExcelAnalysisService, ExcelAnalysisService>();
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

@@ -1,0 +1,96 @@
+/* src/components/AiInsightCard.css - AI Insights & Action Cards */
+
+.ai-insight-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .ai-insight-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.ai-card.diagnosis {
+  border-left: 4px solid #ef4444;
+}
+
+.ai-card.action {
+  border-left: 4px solid #6366f1;
+}
+
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ai-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ai-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-card-icon.red { background: #fee2e2; color: #dc2626; }
+.ai-card-icon.indigo { background: #e0e7ff; color: #4f46e5; }
+
+.ai-insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-insight-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: #334155;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ai-insight-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.ai-insight-bullet.red { background: #ef4444; }
+.ai-insight-bullet.indigo { background: #6366f1; }
+
+.ai-reply-box {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #475569;
+  font-style: italic;
+}

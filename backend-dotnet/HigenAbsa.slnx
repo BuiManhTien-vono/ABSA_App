@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HigenAbsa.Application/HigenAbsa.Application.csproj" />
+    <Project Path="src/HigenAbsa.Domain/HigenAbsa.Domain.csproj" />
+    <Project Path="src/HigenAbsa.Infrastructure/HigenAbsa.Infrastructure.csproj" />
+    <Project Path="src/HigenAbsa.WebApi/HigenAbsa.WebApi.csproj" />
+  </Folder>
+</Solution>

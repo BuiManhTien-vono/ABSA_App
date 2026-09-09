@@ -11,6 +11,7 @@ export const storeService = {
   updateStore: (id, data) => apiClient.put(`/api/v1/stores/${id}`, data),
   deleteStore: (id) => apiClient.delete(`/api/v1/stores/${id}`),
   syncStore: (id) => apiClient.post(`/api/v1/stores/${id}/sync`),
+  createMockLazadaStore: () => apiClient.post('/api/v1/stores/mock-lazada'),
 };
 
 export default storeService;

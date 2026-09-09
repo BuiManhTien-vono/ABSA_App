@@ -8,7 +8,7 @@ namespace HigenAbsa.Api.Controllers;
 
 [ApiController]
 [Route("api/v1")]
-[Authorize]
+[AllowAnonymous]
 public class StoreController(IStoreService storeService) : ControllerBase
 {
     // -----------------------------------------------------------------------
@@ -113,6 +113,17 @@ public class StoreController(IStoreService storeService) : ControllerBase
     {
         var store = await storeService.SyncStoreAsync(id);
         if (store == null) return NotFound(new { detail = "Store connection not found." });
+        return Ok(store);
+    }
+
+    /// <summary>
+    /// Seed a realistic Mock Lazada Flagship Store with 7 products and real customer reviews.
+    /// </summary>
+    [HttpPost("stores/mock-lazada")]
+    [ProducesResponseType(typeof(StoreConnectionDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateMockLazadaStore()
+    {
+        var store = await storeService.SeedMockLazadaStoreAsync();
         return Ok(store);
     }
 }
