@@ -8,6 +8,11 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import CustomersPage from './pages/CustomersPage';
 import ReviewFeedPage from './pages/ReviewFeedPage';
 import ConnectPage from './pages/ConnectPage';
+import ShopeeStoresPage from './pages/ShopeeStoresPage';
+import ShopeeCategoriesPage from './pages/ShopeeCategoriesPage';
+import ShopeeCategoryProductsPage from './pages/ShopeeCategoryProductsPage';
+import ShopeeProductDetailPage from './pages/ShopeeProductDetailPage';
+import ShopeeProductsPage from './pages/ShopeeProductsPage';
 import TemplatesPage from './pages/TemplatesPage';
 import TicketsPage from './pages/TicketsPage';
 import UsersPage from './pages/UsersPage';
@@ -36,6 +41,11 @@ export default function App() {
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/reviews" element={<ReviewFeedPage />} />
               <Route path="/connect" element={<ConnectPage />} />
+              <Route path="/connect/shopee" element={<ShopeeStoresPage />} />
+              <Route path="/connect/shopee/:shopId/categories" element={<ShopeeCategoriesPage />} />
+              <Route path="/connect/shopee/:shopId/categories/:categoryId/products" element={<ShopeeCategoryProductsPage />} />
+              <Route path="/connect/shopee/:shopId/products/:productId" element={<ShopeeProductDetailPage />} />
+              <Route path="/connect/shopee/:shopId/products" element={<ShopeeCategoryProductsPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
               <Route path="/tickets" element={<TicketsPage />} />
               <Route path="/users" element={<UsersPage />} />

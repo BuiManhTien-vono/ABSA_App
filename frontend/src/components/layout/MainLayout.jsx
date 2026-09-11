@@ -15,9 +15,20 @@ const PAGE_TITLES = {
 
 export default function MainLayout() {
   const location = useLocation();
-  const title = location.pathname.startsWith('/products/')
-    ? 'Chi tiết sản phẩm'
-    : PAGE_TITLES[location.pathname] || 'FeedbackAI';
+  let title;
+  if (location.pathname.startsWith('/products/') || location.pathname.match(/^\/connect\/shopee\/[^/]+\/products\/[^/]+/)) {
+    title = 'Chi tiết sản phẩm';
+  } else if (location.pathname.match(/^\/connect\/shopee\/[^/]+\/categories\/[^/]+\/products/)) {
+    title = 'Sản phẩm';
+  } else if (location.pathname.match(/^\/connect\/shopee\/[^/]+\/categories/)) {
+    title = 'Danh mục cửa hàng';
+  } else if (location.pathname.match(/^\/connect\/shopee\/[^/]+\/products/)) {
+    title = 'Sản phẩm';
+  } else if (location.pathname === '/connect/shopee') {
+    title = 'Cửa hàng Shopee';
+  } else {
+    title = PAGE_TITLES[location.pathname] || 'FeedbackAI';
+  }
 
   return (
     <div className="main-wrapper">

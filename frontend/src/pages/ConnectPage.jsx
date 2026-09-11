@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link2, RefreshCw, Plus, Trash2, CheckCircle2, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import storeService from '../services/storeService';
 import ExcelUploadModal from '../components/ExcelUploadModal';
 
 export default function ConnectPage() {
+  const navigate = useNavigate();
   const [platforms, setPlatforms] = useState([]);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +19,9 @@ export default function ConnectPage() {
   });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [shopeeActivated, setShopeeActivated] = useState(() => {
+    return localStorage.getItem('shopeeActivated') === 'true';
+  });
 
   useEffect(() => {
     loadData();
@@ -87,12 +92,22 @@ export default function ConnectPage() {
     try {
       setLoading(true);
       await storeService.createMockLazadaStore();
-      alert('Đã kết nối thành công Cửa hàng Mẫu Lazada (7 Sản phẩm & 18+ Đánh giá thực tế đã bóc tách bằng AI)!');
+      // Activate Shopee when mock Lazada is created
+      setShopeeActivated(true);
+      localStorage.setItem('shopeeActivated', 'true');
+      alert('Đã kết nối thành công Cửa hàng Mẫu Lazada (7 Sản phẩm & 18+ Đánh giá thực tế đã bóc tách bằng AI)!\n\n🎉 Shopee Việt Nam cũng đã được kích hoạt thành công!');
       loadData();
     } catch (err) {
       alert('Tạo cửa hàng mẫu thất bại: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function handlePlatformClick(p) {
+    const platformName = (p.name || '').toLowerCase();
+    if (platformName.includes('shopee') && shopeeActivated) {
+      navigate('/connect/shopee');
     }
   }
 
@@ -170,16 +185,47 @@ export default function ConnectPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         {platforms.map((p) => {
           const connectedCount = stores.filter((s) => s.platformCode === p.code && s.status === 'CONNECTED').length;
+          const isShopee = (p.name || '').toLowerCase().includes('shopee');
+          const isActive = isShopee ? (p.isActive || shopeeActivated) : p.isActive;
+          const isClickable = isShopee && isActive;
           return (
-            <div key={p.id} style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div
+              key={p.id}
+              onClick={() => handlePlatformClick(p)}
+              style={{
+                background: '#fff',
+                padding: '16px',
+                borderRadius: '8px',
+                border: isClickable ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                cursor: isClickable ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+                boxShadow: isClickable ? '0 2px 8px rgba(79, 70, 229, 0.1)' : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (isClickable) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.18)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isClickable) {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(79, 70, 229, 0.1)';
+                }
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: '14px', color: '#0f172a' }}>{p.name}</strong>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: p.isActive ? '#dcfce7' : '#f1f5f9', color: p.isActive ? '#166534' : '#64748b' }}>
-                  {p.isActive ? 'Active' : 'Inactive'}
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: isActive ? '#dcfce7' : '#f1f5f9', color: isActive ? '#166534' : '#64748b' }}>
+                  {isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
               <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', marginBottom: 0 }}>
-                {connectedCount > 0 ? `Đã kết nối ${connectedCount} shop` : 'Chưa có kết nối nào'}
+                {isShopee && shopeeActivated
+                  ? 'Đã kết nối 10 shop · Nhấn để xem'
+                  : connectedCount > 0
+                    ? `Đã kết nối ${connectedCount} shop`
+                    : 'Chưa có kết nối nào'}
               </p>
             </div>
           );
