@@ -18,6 +18,11 @@ import {
   LAZADA_STORE_CATEGORIES,
   getLazadaProductsForCategory,
 } from '../data/lazadaData';
+import {
+  TIKTOK_SHOP_STORES,
+  TIKTOK_SHOP_STORE_CATEGORIES,
+  getTikTokShopProductsForCategory,
+} from '../data/tiktokShopData';
 import './PlatformProductsPage.css';
 
 const PLATFORM_DATA = {
@@ -38,6 +43,14 @@ const PLATFORM_DATA = {
     stores: LAZADA_STORES,
     categories: LAZADA_STORE_CATEGORIES,
     getProducts: getLazadaProductsForCategory,
+  },
+  'tiktok-shop': {
+    name: 'TikTok Shop Việt Nam',
+    shortName: 'TikTok Shop',
+    icon: '🎵',
+    stores: TIKTOK_SHOP_STORES,
+    categories: TIKTOK_SHOP_STORE_CATEGORIES,
+    getProducts: getTikTokShopProductsForCategory,
   },
 };
 

@@ -12,6 +12,11 @@ import {
   findLazadaProductById,
   generateLazadaMockComments,
 } from '../data/lazadaData';
+import {
+  TIKTOK_SHOP_STORES,
+  findTikTokShopProductById,
+  generateTikTokShopMockComments,
+} from '../data/tiktokShopData';
 import { getAspectLabel, getMacroLabel } from '../utils/aspectMapper';
 import './PlatformProductDetailPage.css';
 
@@ -38,6 +43,12 @@ const PLATFORM_DATA = {
     stores: LAZADA_STORES,
     findProduct: findLazadaProductById,
     generateComments: (product) => generateLazadaMockComments(product, 20),
+  },
+  'tiktok-shop': {
+    name: 'TikTok Shop',
+    stores: TIKTOK_SHOP_STORES,
+    findProduct: findTikTokShopProductById,
+    generateComments: (product) => generateTikTokShopMockComments(product, 20),
   },
 };
 

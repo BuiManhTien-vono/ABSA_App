@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Package, Store, ChevronRight, ShoppingBag, BarChart3 } from 'lucide-react';
 import { SHOPEE_STORES, STORE_CATEGORIES } from '../data/shopeeData';
 import { LAZADA_STORES, LAZADA_STORE_CATEGORIES } from '../data/lazadaData';
+import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES } from '../data/tiktokShopData';
 
 // Helper: read connected platforms from localStorage
 function getConnectedPlatforms() {
@@ -28,6 +29,14 @@ const PLATFORM_INFO = {
     gradient: 'linear-gradient(135deg, #0f146d, #2b31a6)',
     getStores: () => LAZADA_STORES,
     getCategories: () => LAZADA_STORE_CATEGORIES,
+  },
+  'tiktok-shop': {
+    name: 'TikTok Shop Việt Nam',
+    icon: '🎵',
+    color: '#111827',
+    gradient: 'linear-gradient(135deg, #111827, #374151)',
+    getStores: () => TIKTOK_SHOP_STORES,
+    getCategories: () => TIKTOK_SHOP_STORE_CATEGORIES,
   },
 };
 

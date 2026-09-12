@@ -5,10 +5,18 @@ import storeService from '../services/storeService';
 import ExcelUploadModal from '../components/ExcelUploadModal';
 import { SHOPEE_STORES } from '../data/shopeeData';
 import { LAZADA_STORES } from '../data/lazadaData';
+import { TIKTOK_SHOP_STORES } from '../data/tiktokShopData';
+
+const DEFAULT_MOCK_API_STORES = [
+  { id: 'mock-api-1', platformId: 3, platformCode: 'TIKI', platformName: 'Tiki', storeName: 'Tiki Official Store', storeCodeOnPlatform: 'TIKI_OFFICIAL_01', status: 'CONNECTED', productCount: 128, reviewCount: 2460, lastSyncedAt: '2026-09-10T09:30:00', isMock: true },
+  { id: 'mock-api-2', platformId: 4, platformCode: 'TIKTOK_SHOP', platformName: 'TikTok Shop Việt Nam', storeName: 'TikTok Trend House', storeCodeOnPlatform: 'TTS_TREND_02', status: 'CONNECTED', productCount: 86, reviewCount: 1735, lastSyncedAt: '2026-09-11T14:20:00', isMock: true },
+  { id: 'mock-api-3', platformId: 4, platformCode: 'TIKTOK_SHOP', platformName: 'TikTok Shop Việt Nam', storeName: 'Beauty Live Mall', storeCodeOnPlatform: 'TTS_BEAUTY_03', status: 'CONNECTED', productCount: 54, reviewCount: 982, lastSyncedAt: '2026-09-12T08:15:00', isMock: true },
+];
 
 const MOCK_STORES_BY_PLATFORM = {
   shopee: SHOPEE_STORES,
   lazada: LAZADA_STORES,
+  'tiktok-shop': TIKTOK_SHOP_STORES,
 };
 
 // Helper: read/write connected platforms from localStorage
@@ -51,10 +59,18 @@ const PLATFORM_DEFS = [
     description: 'Kết nối cửa hàng Lazada để theo dõi cảm xúc khách hàng theo khía cạnh',
     getStores: () => LAZADA_STORES,
   },
+  {
+    code: 'tiktok-shop',
+    name: 'TikTok Shop Việt Nam',
+    icon: '🎵',
+    color: '#111827',
+    gradient: 'linear-gradient(135deg, #111827, #374151)',
+    description: 'Kết nối cửa hàng TikTok Shop để theo dõi cảm xúc khách hàng',
+    getStores: () => TIKTOK_SHOP_STORES,
+  },
 ];
 
-// Tiki and TikTok Shop are selectable UI options only. Their store lists will
-// come from the integration flow later, so no product/store mock is created.
+// Additional marketplaces shown in the connection picker.
 const MODAL_PLATFORM_DEFS = [
   ...PLATFORM_DEFS,
   {
@@ -66,21 +82,19 @@ const MODAL_PLATFORM_DEFS = [
     description: 'Chọn Tiki để tiếp tục thiết lập kết nối',
     getStores: () => [],
   },
-  {
-    code: 'tiktok-shop',
-    name: 'TikTok Shop Việt Nam',
-    icon: '🎵',
-    color: '#111827',
-    gradient: 'linear-gradient(135deg, #111827, #374151)',
-    description: 'Chọn TikTok Shop để tiếp tục thiết lập kết nối',
-    getStores: () => [],
-  },
 ];
 
 export default function ConnectPage() {
   const navigate = useNavigate();
   const [platforms, setPlatforms] = useState([]);
-  const [stores, setStores] = useState([]);
+  const [stores, setStores] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mockApiStores') || 'null');
+      return Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_MOCK_API_STORES;
+    } catch {
+      return DEFAULT_MOCK_API_STORES;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
@@ -92,6 +106,8 @@ export default function ConnectPage() {
     accessToken: '',
   });
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [disconnectPlatformCode, setDisconnectPlatformCode] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Platform connection modal state
@@ -101,6 +117,11 @@ export default function ConnectPage() {
   const [storeSearch, setStoreSearch] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connectedPlatforms, setConnectedPlatforms] = useState(getConnectedPlatforms);
+
+  function showToast(message, type = 'success') {
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 3500);
+  }
 
   useEffect(() => {
     loadData();
@@ -114,9 +135,16 @@ export default function ConnectPage() {
         storeService.getStores({ pageSize: 50 }),
       ]);
       setPlatforms(pRes || []);
-      setStores(sRes?.items || []);
+      let mockStores = JSON.parse(localStorage.getItem('mockApiStores') || 'null');
+      if (!Array.isArray(mockStores) || mockStores.length === 0) {
+        mockStores = DEFAULT_MOCK_API_STORES;
+        localStorage.setItem('mockApiStores', JSON.stringify(mockStores));
+      }
+      setStores([...(sRes?.items || []), ...mockStores]);
     } catch (err) {
       console.error(err);
+      setStores(DEFAULT_MOCK_API_STORES);
+      localStorage.setItem('mockApiStores', JSON.stringify(DEFAULT_MOCK_API_STORES));
     } finally {
       setLoading(false);
     }
@@ -142,7 +170,29 @@ export default function ConnectPage() {
       setFormData({ platformId: '', storeName: '', storeCodeOnPlatform: '', accessToken: '' });
       loadData();
     } catch (err) {
-      setError(err.message || 'Không thể tạo kết nối cửa hàng');
+      // Fallback mock connection so the manual-connect flow can be tested
+      // even when the external API/backend integration is unavailable.
+      const platform = manualPlatforms.find((item) => String(item.id) === String(pid));
+      const mockStore = {
+        id: `mock-store-${Date.now()}`,
+        platformId: pid,
+        platformCode: platform?.code || '',
+        platformName: platform?.name || 'Sàn TMĐT',
+        storeName: formData.storeName,
+        storeCodeOnPlatform: formData.storeCodeOnPlatform,
+        status: 'CONNECTED',
+        productCount: 0,
+        reviewCount: 0,
+        lastSyncedAt: new Date().toISOString(),
+        isMock: true,
+      };
+      const currentMockStores = JSON.parse(localStorage.getItem('mockApiStores') || '[]');
+      localStorage.setItem('mockApiStores', JSON.stringify([...currentMockStores, mockStore]));
+      setStores((current) => [...current, mockStore]);
+      setShowModal(false);
+      setFormData({ platformId: '', storeName: '', storeCodeOnPlatform: '', accessToken: '' });
+      setError(null);
+      showToast('✅ Đã tạo kết nối mock thành công!');
     } finally {
       setSubmitting(false);
     }
@@ -153,7 +203,7 @@ export default function ConnectPage() {
       await storeService.syncStore(id);
       loadData();
     } catch (err) {
-      alert('Đồng bộ thất bại: ' + err.message);
+      showToast('Đồng bộ thất bại: ' + err.message, 'error');
     }
   }
 
@@ -162,8 +212,9 @@ export default function ConnectPage() {
     try {
       await storeService.deleteStore(id);
       loadData();
+      showToast('✅ Đã ngắt kết nối cửa hàng.');
     } catch (err) {
-      alert('Lỗi: ' + err.message);
+      showToast('Lỗi: ' + err.message, 'error');
     }
   }
 
@@ -178,7 +229,12 @@ export default function ConnectPage() {
 
   function selectPlatform(platform) {
     setSelectedPlatform(platform);
-    setSelectedStoreIds([]);
+    const existingConnection = connectedPlatforms[platform.code];
+    setSelectedStoreIds(
+      existingConnection?.connected && Array.isArray(existingConnection.stores)
+        ? existingConnection.stores
+        : [],
+    );
     setStoreSearch('');
     setModalStep(2);
   }
@@ -203,10 +259,7 @@ export default function ConnectPage() {
 
     // Simulate connection delay
     setTimeout(() => {
-      const allStores = selectedPlatform.getStores();
-      const storeIdsToConnect = selectedStoreIds.length === 0
-        ? allStores.map((s) => s.id) // Connect all if none selected
-        : selectedStoreIds;
+      const storeIdsToConnect = selectedStoreIds;
 
       const updated = {
         ...connectedPlatforms,
@@ -226,26 +279,54 @@ export default function ConnectPage() {
 
       setConnecting(false);
       setShowPlatformModal(false);
-      alert(`✅ Đã kết nối thành công ${storeIdsToConnect.length} cửa hàng trên ${selectedPlatform.name}!`);
+      showToast(`✅ Đã kết nối thành công ${storeIdsToConnect.length} cửa hàng trên ${selectedPlatform.name}!`);
     }, 1200);
   }
 
   function handleDisconnectPlatform(platformCode) {
-    if (!confirm(`Bạn có chắc muốn ngắt kết nối tất cả cửa hàng trên sàn này?`)) return;
+    setDisconnectPlatformCode(platformCode);
+  }
+
+  function confirmDisconnectPlatform() {
+    const platformCode = disconnectPlatformCode;
+    if (!platformCode) return;
     const updated = { ...connectedPlatforms };
     delete updated[platformCode];
     saveConnectedPlatforms(updated);
     setConnectedPlatforms(updated);
+    setDisconnectPlatformCode(null);
+    showToast('✅ Đã ngắt kết nối toàn bộ cửa hàng trên sàn.');
     if (platformCode === 'shopee') {
       localStorage.removeItem('shopeeActivated');
     }
   }
 
   function handlePlatformCardClick(platformDef) {
-    const conn = connectedPlatforms[platformDef.code];
-    if (conn?.connected) {
-      navigate(`/products/${platformDef.code}`);
+    // Open this platform's shop list directly instead of showing the
+    // marketplace picker first.
+    selectPlatform(platformDef);
+    setShowPlatformModal(true);
+  }
+
+  function handleStoreClick(store) {
+    const platformCode = String(store.platformCode || '').toLowerCase();
+    if (platformCode === 'tiktok_shop') {
+      navigate('/products/tiktok-shop');
+    } else if (platformCode === 'shopee' || platformCode === 'lazada') {
+      navigate(`/products/${platformCode}`);
+    } else {
+      // Tiki and future API platforms can still use the generic product route.
+      navigate(`/products/${platformCode}`);
     }
+  }
+
+  function closePlatformModal() {
+    if (connecting) return;
+    setShowPlatformModal(false);
+    setModalStep(1);
+    setSelectedPlatform(null);
+    setSelectedStoreIds([]);
+    setStoreSearch('');
   }
 
   function getConnectedStoreCount(platformCode) {
@@ -268,8 +349,59 @@ export default function ConnectPage() {
     );
   }, [selectedPlatform, storeSearch]);
 
+  // Keep the manual API form usable while the backend platform list is loading
+  // or temporarily unavailable. These IDs match the seeded platform records.
+  const manualPlatforms = platforms.length > 0 ? platforms : [
+    { id: 1, name: 'Shopee Việt Nam' },
+    { id: 2, name: 'Lazada Việt Nam' },
+    { id: 3, name: 'Tiki' },
+    { id: 4, name: 'TikTok Shop Việt Nam' },
+  ];
+
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '24px', right: '24px', zIndex: 2000,
+          maxWidth: '360px', padding: '13px 18px', borderRadius: '10px',
+          background: toast.type === 'error' ? '#fef2f2' : '#f0fdf4',
+          color: toast.type === 'error' ? '#b91c1c' : '#166534',
+          border: `1px solid ${toast.type === 'error' ? '#fecaca' : '#bbf7d0'}`,
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
+          fontSize: '13px', fontWeight: 500,
+        }}>
+          {toast.message}
+        </div>
+      )}
+      {disconnectPlatformCode && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 2100,
+          background: 'rgba(15, 23, 42, 0.45)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: '20px',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '420px', background: '#fff', borderRadius: '14px',
+            padding: '24px', boxShadow: '0 20px 50px rgba(15, 23, 42, 0.2)',
+          }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '17px', color: '#0f172a' }}>
+              Ngắt kết nối sàn?
+            </h3>
+            <p style={{ margin: '0 0 22px', fontSize: '13px', lineHeight: 1.6, color: '#64748b' }}>
+              Tất cả cửa hàng thuộc sàn này sẽ bị ngắt kết nối. Bạn có muốn tiếp tục không?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button type="button" onClick={() => setDisconnectPlatformCode(null)} style={{
+                padding: '9px 16px', borderRadius: '7px', border: '1px solid #cbd5e1',
+                background: '#fff', color: '#475569', cursor: 'pointer', fontSize: '13px',
+              }}>Hủy</button>
+              <button type="button" onClick={confirmDisconnectPlatform} style={{
+                padding: '9px 16px', borderRadius: '7px', border: 'none',
+                background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+              }}>Ngắt kết nối tất cả</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#1e293b' }}>Quản lý Kết nối Gian hàng</h1>
@@ -297,8 +429,11 @@ export default function ConnectPage() {
               display: 'flex', alignItems: 'center', gap: '6px',
               backgroundColor: '#10b981', color: '#fff', border: 'none',
               borderRadius: '6px', padding: '8px 16px', fontSize: '13px',
-              fontWeight: 500, cursor: 'pointer',
+              fontWeight: 500, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(16, 185, 129, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.25)'; }}
           >
             <FileSpreadsheet size={16} /> Phân tích từ File Excel (.xlsx)
           </button>
@@ -311,8 +446,11 @@ export default function ConnectPage() {
               display: 'flex', alignItems: 'center', gap: '6px',
               backgroundColor: '#64748b', color: '#fff', border: 'none',
               borderRadius: '6px', padding: '8px 16px', fontSize: '13px',
-              fontWeight: 500, cursor: 'pointer',
+              fontWeight: 500, cursor: 'pointer', boxShadow: '0 4px 12px rgba(100, 116, 139, 0.25)',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(100, 116, 139, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(100, 116, 139, 0.25)'; }}
           >
             <Plus size={16} /> Kết nối thủ công (API)
           </button>
@@ -321,7 +459,10 @@ export default function ConnectPage() {
 
       {/* Platform Cards */}
       <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '12px' }}>Sàn TMĐT đã kết nối</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+      <div style={{
+        display: 'flex', flexWrap: 'nowrap', gap: '16px', marginBottom: '32px',
+        overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin',
+      }}>
         {PLATFORM_DEFS.map((pDef) => {
           const conn = connectedPlatforms[pDef.code];
           const isConnected = conn?.connected;
@@ -334,25 +475,24 @@ export default function ConnectPage() {
               style={{
                 background: '#fff',
                 padding: '20px',
+                flex: '0 0 280px',
                 borderRadius: '12px',
                 border: isConnected ? `2px solid ${pDef.color}` : '1px solid #e2e8f0',
-                cursor: isConnected ? 'pointer' : 'default',
+                cursor: 'pointer',
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: isConnected ? `0 4px 16px ${pDef.color}18` : '0 1px 3px rgba(0,0,0,0.04)',
                 position: 'relative',
                 overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
-                if (isConnected) {
-                  e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = `0 8px 24px ${pDef.color}25`;
-                }
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = `0 8px 24px ${pDef.color}25`;
               }}
               onMouseLeave={(e) => {
-                if (isConnected) {
-                  e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = `0 4px 16px ${pDef.color}18`;
-                }
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = isConnected
+                  ? `0 4px 16px ${pDef.color}18`
+                  : '0 1px 3px rgba(0,0,0,0.04)';
               }}
             >
               {/* Decorative gradient bar */}
@@ -407,12 +547,17 @@ export default function ConnectPage() {
                       <div style={{ fontSize: '22px', fontWeight: 700, color: pDef.color }}>{storeCount}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>cửa hàng liên kết</div>
                     </div>
-                    <span style={{
-                      fontSize: '12px', color: pDef.color, fontWeight: 600,
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                    }}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/products/${pDef.code}`); }}
+                      style={{
+                        fontSize: '12px', color: pDef.color, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        border: 'none', background: 'none', padding: 0, cursor: 'pointer',
+                      }}
+                    >
                       Xem sản phẩm <ChevronRight size={14} />
-                    </span>
+                    </button>
                   </div>
                 ) : (
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
@@ -424,6 +569,32 @@ export default function ConnectPage() {
           );
         })}
 
+        {/* Add another marketplace */}
+        <button
+          type="button"
+          onClick={openPlatformModal}
+          style={{
+            minHeight: '190px', padding: '20px', borderRadius: '12px',
+            border: '2px dashed #cbd5e1', background: '#f8fafc',
+            color: '#64748b', cursor: 'pointer', display: 'flex',
+            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#6366f1';
+            e.currentTarget.style.color = '#4f46e5';
+            e.currentTarget.style.background = '#eef2ff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#cbd5e1';
+            e.currentTarget.style.color = '#64748b';
+            e.currentTarget.style.background = '#f8fafc';
+          }}
+        >
+          <Plus size={30} />
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>Thêm sàn TMĐT</span>
+        </button>
+
         {/* Backend API stores (from platforms endpoint) */}
         {platforms
           .filter((p) => {
@@ -434,7 +605,7 @@ export default function ConnectPage() {
             const connectedCount = stores.filter((s) => s.platformCode === p.code && s.status === 'CONNECTED').length;
             return (
               <div key={p.id} style={{
-                background: '#fff', padding: '20px', borderRadius: '12px',
+                background: '#fff', padding: '20px', borderRadius: '12px', flex: '0 0 280px',
                 border: '1px solid #e2e8f0',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -484,7 +655,15 @@ export default function ConnectPage() {
             <tbody>
               {stores.map((s) => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 500, color: '#0f172a' }}>{s.storeName}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 500 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleStoreClick(s)}
+                      style={{ border: 'none', background: 'none', padding: 0, color: '#4f46e5', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      {s.storeName}
+                    </button>
+                  </td>
                   <td style={{ padding: '12px 16px', color: '#334155' }}>{s.platformName}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b', fontFamily: 'monospace' }}>{s.storeCodeOnPlatform}</td>
                   <td style={{ padding: '12px 16px' }}>
@@ -526,7 +705,7 @@ export default function ConnectPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 1000, backdropFilter: 'blur(4px)',
         }}
-          onClick={() => !connecting && setShowPlatformModal(false)}
+          onClick={closePlatformModal}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -555,7 +734,7 @@ export default function ConnectPage() {
                 </p>
               </div>
               <button
-                onClick={() => !connecting && setShowPlatformModal(false)}
+                onClick={closePlatformModal}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}
               >
                 <X size={20} />
@@ -572,28 +751,23 @@ export default function ConnectPage() {
                     return (
                       <button
                         key={pDef.code}
-                        onClick={() => !alreadyConnected && selectPlatform(pDef)}
-                        disabled={alreadyConnected}
+                        onClick={() => selectPlatform(pDef)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '16px',
                           padding: '18px 20px', borderRadius: '12px',
                           border: alreadyConnected ? '1px solid #e2e8f0' : '2px solid #e2e8f0',
                           background: alreadyConnected ? '#f8fafc' : '#fff',
-                          cursor: alreadyConnected ? 'not-allowed' : 'pointer',
+                          cursor: 'pointer',
                           textAlign: 'left', transition: 'all 0.2s ease',
-                          opacity: alreadyConnected ? 0.6 : 1,
+                          opacity: 1,
                         }}
                         onMouseEnter={(e) => {
-                          if (!alreadyConnected) {
-                            e.currentTarget.style.borderColor = pDef.color;
-                            e.currentTarget.style.boxShadow = `0 4px 16px ${pDef.color}15`;
-                          }
+                          e.currentTarget.style.borderColor = pDef.color;
+                          e.currentTarget.style.boxShadow = `0 4px 16px ${pDef.color}15`;
                         }}
                         onMouseLeave={(e) => {
-                          if (!alreadyConnected) {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }
+                          e.currentTarget.style.borderColor = '#e2e8f0';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                       >
                         <div style={{
@@ -670,8 +844,10 @@ export default function ConnectPage() {
                           style={{
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: '12px 14px', borderRadius: '10px',
-                            border: isSelected ? `2px solid ${selectedPlatform?.color}` : '1px solid #e2e8f0',
+                            border: `2px solid ${isSelected ? selectedPlatform?.color : 'transparent'}`,
                             background: isSelected ? `${selectedPlatform?.color}08` : '#fff',
+                            boxSizing: 'border-box',
+                            boxShadow: isSelected ? 'none' : 'inset 0 0 0 1px #e2e8f0',
                             cursor: 'pointer', transition: 'all 0.15s ease',
                           }}
                         >
@@ -731,7 +907,7 @@ export default function ConnectPage() {
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  onClick={() => !connecting && setShowPlatformModal(false)}
+                  onClick={closePlatformModal}
                   disabled={connecting}
                   style={{
                     padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1',
@@ -743,20 +919,20 @@ export default function ConnectPage() {
                 {modalStep === 2 && (
                   <button
                     onClick={handleConnectPlatform}
-                    disabled={connecting || availableStores.length === 0}
+                    disabled={connecting || availableStores.length === 0 || selectedStoreIds.length === 0}
                     style={{
                       padding: '8px 20px', borderRadius: '8px', border: 'none',
                       background: selectedPlatform?.gradient || '#4f46e5',
                       color: '#fff', fontSize: '13px', fontWeight: 600,
-                      opacity: connecting || availableStores.length === 0 ? 0.5 : 1,
-                      cursor: connecting || availableStores.length === 0 ? 'not-allowed' : 'pointer',
+                      opacity: connecting || availableStores.length === 0 || selectedStoreIds.length === 0 ? 0.5 : 1,
+                      cursor: connecting || availableStores.length === 0 || selectedStoreIds.length === 0 ? 'not-allowed' : 'pointer',
                       boxShadow: `0 4px 12px ${selectedPlatform?.color || '#4f46e5'}30`,
                     }}
                   >
                     {connecting
                       ? '⏳ Đang kết nối...'
                       : selectedStoreIds.length === 0
-                        ? `Kết nối tất cả (${availableStores.length} shop)`
+                        ? 'Chọn ít nhất 1 shop'
                         : `Kết nối ${selectedStoreIds.length} cửa hàng`}
                   </button>
                 )}
@@ -780,7 +956,8 @@ export default function ConnectPage() {
                   onChange={(e) => setFormData({ ...formData, platformId: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 >
-                  {platforms.map((p) => (
+                  <option value="" disabled>-- Chọn sàn TMĐT --</option>
+                  {manualPlatforms.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
