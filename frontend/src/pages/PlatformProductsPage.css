@@ -1,0 +1,355 @@
+.platform-products-page {
+  max-width: 1240px;
+  margin: 0 auto;
+  color: #172033;
+}
+
+.platform-products-page button,
+.platform-products-page input {
+  font: inherit;
+}
+
+.platform-products-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 17px;
+  color: #5b50c7;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.platform-products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.platform-products-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.platform-products-title > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  font-size: 24px;
+  box-shadow: 0 5px 16px rgba(79, 70, 229, 0.22);
+}
+
+.platform-products-page--shopee .platform-products-title > span {
+  background: linear-gradient(135deg, #ee4d2d, #ff6633);
+}
+
+.platform-products-page--lazada .platform-products-title > span {
+  background: linear-gradient(135deg, #0f146d, #2b31a6);
+}
+
+.platform-products-title h1 {
+  margin: 0;
+  color: #182132;
+  font-size: 21px;
+}
+
+.platform-products-title p {
+  margin: 5px 0 0;
+  color: #738094;
+  font-size: 12px;
+}
+
+.platform-products-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.platform-products-search svg {
+  position: absolute;
+  left: 11px;
+  color: #929cab;
+}
+
+.platform-products-search input {
+  width: 290px;
+  height: 39px;
+  padding: 0 12px 0 34px;
+  border: 1px solid #d8dee7;
+  border-radius: 8px;
+  outline: none;
+  color: #364052;
+  background: #fff;
+  font-size: 11px;
+}
+
+.platform-products-search input:focus {
+  border-color: #8e84dd;
+  box-shadow: 0 0 0 3px rgba(91, 80, 199, 0.1);
+}
+
+.platform-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.platform-store {
+  overflow: hidden;
+  border: 1px solid #e1e6ed;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(25, 34, 53, 0.025);
+}
+
+.platform-store.is-expanded {
+  border-color: #d1cdef;
+  box-shadow: 0 8px 23px rgba(25, 34, 53, 0.055);
+}
+
+.platform-store__toggle {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 42px minmax(0, 1fr) 92px 92px auto;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 0;
+  color: #344054;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.platform-store__toggle:hover {
+  background: #fcfcfe;
+}
+
+.platform-store__avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 10px;
+  background: #f1f3f8;
+  font-size: 21px;
+}
+
+.platform-store__identity,
+.platform-store__metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.platform-store__identity strong {
+  overflow: hidden;
+  color: #2b3546;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-store__identity small,
+.platform-store__metric small {
+  overflow: hidden;
+  color: #929ba9;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-store__metric {
+  text-align: right;
+}
+
+.platform-store__metric strong {
+  color: #3e485a;
+  font-size: 12px;
+}
+
+.platform-store__toggle > svg {
+  color: #9099a8;
+  transition: transform 160ms ease;
+}
+
+.platform-store.is-expanded .platform-store__toggle > svg {
+  color: #5b50c7;
+  transform: rotate(180deg);
+}
+
+.platform-store__products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid #e9ecf1;
+  background: #f8f9fb;
+}
+
+.platform-store__empty {
+  grid-column: 1 / -1;
+  padding: 28px;
+  color: #8791a1;
+  font-size: 11px;
+  text-align: center;
+}
+
+.platform-product-card {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e1e5eb;
+  border-radius: 9px;
+  flex-direction: column;
+  background: #fff;
+}
+
+.platform-product-card__main {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  padding: 13px;
+}
+
+.platform-product-card__main img {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  background: #f0f2f5;
+  object-fit: cover;
+}
+
+.platform-product-card__main > div {
+  min-width: 0;
+}
+
+.platform-product-card__main span {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #5449b7;
+  background: #f0eefe;
+  font-size: 8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-product-card__main h2 {
+  display: -webkit-box;
+  margin: 5px 0 4px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  color: #30394a;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+}
+
+.platform-product-card__main small {
+  color: #919aa8;
+  font-size: 9px;
+}
+
+.platform-product-card__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: auto 13px 0;
+  padding: 9px 0;
+  border-top: 1px solid #eff1f4;
+}
+
+.platform-product-card__summary strong {
+  color: #d2463f;
+  font-size: 11px;
+}
+
+.platform-product-card__summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #d69d15;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.platform-product-card > a {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 13px;
+  border-top: 1px solid #e9ecf1;
+  color: #5b50c7;
+  background: #fafbfc;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.platform-products-empty {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 30px;
+  border: 1px solid #e1e6ed;
+  border-radius: 11px;
+  color: #8993a2;
+  background: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+.platform-products-empty strong {
+  color: #455064;
+  font-size: 13px;
+}
+
+.platform-products-empty a {
+  margin-top: 3px;
+  color: #5b50c7;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .platform-products-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .platform-products-search,
+  .platform-products-search input {
+    width: 100%;
+  }
+
+  .platform-store__toggle {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+
+  .platform-store__metric {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .platform-store__products {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+}

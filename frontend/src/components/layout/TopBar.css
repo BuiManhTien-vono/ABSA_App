@@ -1,7 +1,7 @@
 .topbar-container {
   display: flex;
-  height: 64px;
-  flex: 0 0 64px;
+  height: 82px;
+  flex: 0 0 82px;
   flex-direction: column;
   border-bottom: 1px solid #edf0f4;
   color: #222936;
@@ -11,20 +11,20 @@
 
 .topbar-tools {
   display: flex;
-  height: 34px;
+  height: 46px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 18px;
+  padding: 0 22px;
 }
 
 .topbar-search {
   display: flex;
-  width: clamp(160px, 24vw, 280px);
-  height: 26px;
+  width: clamp(190px, 25vw, 330px);
+  height: 34px;
   align-items: center;
-  gap: 7px;
-  padding: 0 9px;
+  gap: 8px;
+  padding: 0 11px;
   border: 1px solid #edf0f4;
   border-radius: 6px;
   color: #a1a9b4;
@@ -44,7 +44,7 @@
   color: #3b4350;
   background: transparent;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .topbar-search input::placeholder {
@@ -59,23 +59,23 @@
 
 .topbar-actions {
   flex: 0 0 auto;
-  gap: 9px;
+  gap: 11px;
 }
 
 .topbar-platforms {
-  gap: 5px;
+  gap: 6px;
 }
 
 .topbar-platform {
   display: inline-flex;
-  height: 20px;
+  height: 27px;
   align-items: center;
-  gap: 4px;
-  padding: 0 7px;
+  gap: 5px;
+  padding: 0 9px;
   border: 1px solid transparent;
   border-radius: 999px;
   font-family: inherit;
-  font-size: 8px;
+  font-size: 10.5px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 150ms ease, border-color 150ms ease;
@@ -86,8 +86,8 @@
 }
 
 .topbar-platform > span {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: currentColor;
 }
@@ -112,10 +112,10 @@
 
 .topbar-period {
   display: inline-flex;
-  height: 24px;
+  height: 30px;
   align-items: center;
-  gap: 4px;
-  padding-left: 7px;
+  gap: 5px;
+  padding-left: 9px;
   border-left: 1px solid #edf0f4;
   color: #656f7d;
 }
@@ -126,7 +126,7 @@
   color: #596270;
   background: transparent;
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
 }
@@ -134,8 +134,8 @@
 .topbar-notification {
   position: relative;
   display: inline-flex;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
@@ -154,24 +154,24 @@
   top: 1px;
   right: 0;
   display: grid;
-  min-width: 13px;
-  height: 13px;
+  min-width: 15px;
+  height: 15px;
   place-items: center;
   padding: 0 3px;
   border: 2px solid #ffffff;
   border-radius: 999px;
   color: #ffffff;
   background: #df4d62;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   line-height: 1;
 }
 
 .topbar-title-row {
   display: flex;
-  height: 30px;
+  height: 36px;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 22px;
   border-top: 1px solid #f0f2f5;
   background: #fbfcfd;
 }
@@ -179,7 +179,7 @@
 .topbar-title {
   margin: 0;
   color: #252c38;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0;
