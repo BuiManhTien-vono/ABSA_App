@@ -590,7 +590,8 @@ export function generateMockComments(product, count = 75) {
 }
 
 // Generate products for a specific category
-export function getProductsForCategory(storeId, categoryId) {
+export function getProductsForCategory(storeId, categoryId, options = {}) {
+  const { includeComments = true } = options;
   const store = SHOPEE_STORES.find((s) => s.id === storeId);
   const categories = STORE_CATEGORIES[storeId] || [];
   const cat = categories.find((c) => c.id === categoryId);
@@ -648,7 +649,7 @@ export function getProductsForCategory(storeId, categoryId) {
       };
 
       // Attach 50-100 realistic comments
-      productObj.comments = generateMockComments(productObj, reviewCount);
+      if (includeComments) productObj.comments = generateMockComments(productObj, reviewCount);
       return productObj;
     });
   }
@@ -706,7 +707,7 @@ export function getProductsForCategory(storeId, categoryId) {
       ],
     };
 
-    productObj.comments = generateMockComments(productObj, reviewCount);
+    if (includeComments) productObj.comments = generateMockComments(productObj, reviewCount);
     result.push(productObj);
   }
 

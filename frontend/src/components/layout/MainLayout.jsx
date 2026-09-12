@@ -16,8 +16,10 @@ const PAGE_TITLES = {
 export default function MainLayout() {
   const location = useLocation();
   let title;
-  if (location.pathname.startsWith('/products/') || location.pathname.match(/^\/connect\/shopee\/[^/]+\/products\/[^/]+/)) {
+  if (location.pathname.match(/^\/products\/[^/]+\/[^/]+$/) || location.pathname.match(/^\/connect\/shopee\/[^/]+\/products\/[^/]+/)) {
     title = 'Chi tiết sản phẩm';
+  } else if (location.pathname.match(/^\/products\/[^/]+$/)) {
+    title = 'Sản phẩm theo sàn';
   } else if (location.pathname.match(/^\/connect\/shopee\/[^/]+\/categories\/[^/]+\/products/)) {
     title = 'Sản phẩm';
   } else if (location.pathname.match(/^\/connect\/shopee\/[^/]+\/categories/)) {

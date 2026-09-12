@@ -258,7 +258,7 @@ export default function ShopeeCategoryProductsPage() {
                   alignItems: 'center',
                 }}>
                   <Link
-                    to={`/connect/shopee/${store.id}/products/${p.id}`}
+                    to={`/products/shopee/${p.id}`}
                     style={{
                       fontSize: '12px',
                       color: '#4f46e5',
@@ -269,7 +269,7 @@ export default function ShopeeCategoryProductsPage() {
                     Xem phân tích AI →
                   </Link>
                   <Link
-                    to={`/connect/shopee/${store.id}/products/${p.id}`}
+                    to={`/products/shopee/${p.id}`}
                     style={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}
                   >
                     <ExternalLink size={13} />

@@ -33,7 +33,7 @@ export default function TopBar({ title }) {
     <header className="topbar-container">
       <div className="topbar-tools">
         <form className="topbar-search" onSubmit={handleSearch} role="search">
-          <Search size={13} strokeWidth={1.8} aria-hidden="true" />
+          <Search size={16} strokeWidth={1.8} aria-hidden="true" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -62,7 +62,7 @@ export default function TopBar({ title }) {
           </div>
 
           <label className="topbar-period">
-            <CalendarDays size={13} strokeWidth={1.7} aria-hidden="true" />
+            <CalendarDays size={16} strokeWidth={1.7} aria-hidden="true" />
             <select
               value={period}
               onChange={(event) => setPeriod(event.target.value)}
@@ -75,7 +75,7 @@ export default function TopBar({ title }) {
           </label>
 
           <Link className="topbar-notification" to="/notifications" aria-label="Thông báo" title="Thông báo">
-            <Bell size={16} strokeWidth={1.8} />
+            <Bell size={19} strokeWidth={1.8} />
             <span>3</span>
           </Link>
         </div>
