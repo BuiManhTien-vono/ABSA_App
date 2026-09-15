@@ -9,6 +9,7 @@ using HigenAbsa.Application.DTOs.Store;
 using ProductEntity = HigenAbsa.Domain.Entities.Product;
 using CustomerEntity = HigenAbsa.Domain.Entities.Customer;
 using ReviewEntity = HigenAbsa.Domain.Entities.Review;
+using TicketEntity = HigenAbsa.Domain.Entities.Ticket;
 using HigenAbsa.Application.Services.Inference;
 using HigenAbsa.Domain.Interfaces;
 
@@ -386,11 +387,12 @@ public class StoreService : IStoreService
                 try
                 {
                     var pred = await _inferenceService.PredictOneAsync(rData.Comment);
+                    var sentimentLabel = pred.OverallSentiment?.Label ?? (rData.Rating >= 4 ? "POS" : rData.Rating == 3 ? "NEU" : "NEG");
                     var aiAnalysis = new ReviewAIAnalysis
                     {
                         Id = Guid.NewGuid(),
                         ReviewId = review.Id,
-                        OverallSentiment = pred.OverallSentiment?.Label ?? (rData.Rating >= 4 ? "POS" : rData.Rating == 3 ? "NEU" : "NEG"),
+                        OverallSentiment = sentimentLabel,
                         SentimentScore = pred.OverallSentiment?.Score ?? (rData.Rating >= 4 ? 0.95f : rData.Rating == 3 ? 0.90f : 0.95f),
                         CustomerInsight = pred.Insight?.CustomerInsight,
                         RootCause = pred.Insight?.RootCause,
@@ -412,6 +414,19 @@ public class StoreService : IStoreService
                             SentimentScore = asp.SentimentScore
                         });
                     }
+
+                    if (rData.Rating <= 2 || sentimentLabel == "NEG")
+                    {
+                        _uow.Tickets.AddAsync(new TicketEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            ReviewId = review.Id,
+                            CustomerId = customer.Id,
+                            Priority = rData.Rating == 1 ? "URGENT" : (rData.Rating == 2 ? "HIGH" : "MEDIUM"),
+                            Status = "OPEN",
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
                 }
                 catch
                 {
@@ -424,6 +439,19 @@ public class StoreService : IStoreService
                         SentimentScore = rData.Rating >= 4 ? 0.95f : rData.Rating == 3 ? 0.90f : 0.95f,
                         ProcessedAt = DateTime.UtcNow
                     });
+
+                    if (rData.Rating <= 2 || fallbackSentiment == "NEG")
+                    {
+                        _uow.Tickets.AddAsync(new TicketEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            ReviewId = review.Id,
+                            CustomerId = customer.Id,
+                            Priority = rData.Rating == 1 ? "URGENT" : (rData.Rating == 2 ? "HIGH" : "MEDIUM"),
+                            Status = "OPEN",
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
                 }
             }
         }

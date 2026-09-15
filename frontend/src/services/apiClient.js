@@ -3,6 +3,18 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5058';
 
+export function buildQuery(params = {}) {
+  const cleaned = {};
+  Object.keys(params).forEach((key) => {
+    const val = params[key];
+    if (val !== undefined && val !== null && val !== '') {
+      cleaned[key] = val;
+    }
+  });
+  const queryString = new URLSearchParams(cleaned).toString();
+  return queryString ? `?${queryString}` : '';
+}
+
 class ApiClient {
   constructor() {
     this.baseUrl = API_BASE;
@@ -49,7 +61,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      let msg = error.detail || error.message;
+      let msg = error.detail || error.message || error.title;
       if (!msg && error.errors && typeof error.errors === 'object') {
         msg = Object.values(error.errors).flat().join('; ');
       }

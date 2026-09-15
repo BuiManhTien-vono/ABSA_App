@@ -253,9 +253,17 @@ export default function ConnectPage() {
     }
   }
 
-  function handleConnectPlatform() {
+  async function handleConnectPlatform() {
     if (!selectedPlatform) return;
     setConnecting(true);
+
+    try {
+      // Seed backend SQL Server database with mock products and reviews with AI analysis
+      await storeService.createMockLazadaStore();
+      loadData();
+    } catch (e) {
+      console.warn('Seed mock store notice:', e);
+    }
 
     // Simulate connection delay
     setTimeout(() => {

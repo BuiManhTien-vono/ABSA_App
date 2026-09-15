@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, MessageSquare, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, MessageSquare, Sparkles, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   SHOPEE_STORES,
   STORE_CATEGORIES,
@@ -36,19 +36,19 @@ const PLATFORM_DATA = {
     name: 'Shopee',
     stores: SHOPEE_STORES,
     findProduct: findShopeeProduct,
-    generateComments: (product) => generateMockComments(product, product.reviewCount || 75),
+    generateComments: (product) => generateMockComments(product, 50),
   },
   lazada: {
     name: 'Lazada',
     stores: LAZADA_STORES,
     findProduct: findLazadaProductById,
-    generateComments: (product) => generateLazadaMockComments(product, 20),
+    generateComments: (product) => generateLazadaMockComments(product, 50),
   },
   'tiktok-shop': {
     name: 'TikTok Shop',
     stores: TIKTOK_SHOP_STORES,
     findProduct: findTikTokShopProductById,
-    generateComments: (product) => generateTikTokShopMockComments(product, 20),
+    generateComments: (product) => generateTikTokShopMockComments(product, 50),
   },
 };
 
@@ -114,6 +114,9 @@ export default function PlatformProductDetailPage() {
   const platformCode = routePlatformCode?.toLowerCase();
   const platform = PLATFORM_DATA[platformCode];
 
+  const [commentPage, setCommentPage] = useState(1);
+  const pageSize = 10;
+
   const product = useMemo(
     () => platform?.findProduct(id) || null,
     [id, platform],
@@ -124,6 +127,12 @@ export default function PlatformProductDetailPage() {
     const source = platform.generateComments(product);
     return source.map(normalizeComment);
   }, [platform, product]);
+
+  const totalCommentPages = Math.max(1, Math.ceil(comments.length / pageSize));
+  const paginatedComments = useMemo(() => {
+    const start = (commentPage - 1) * pageSize;
+    return comments.slice(start, start + pageSize);
+  }, [comments, commentPage, pageSize]);
 
   if (!platform || !product) {
     return (
@@ -206,7 +215,7 @@ export default function PlatformProductDetailPage() {
       <section className="platform-detail-section">
         <h2 className="platform-detail-heading"><MessageSquare size={16} /> Phản hồi mẫu ({comments.length})</h2>
         <div className="platform-comment-list">
-          {comments.slice(0, 12).map((comment) => (
+          {paginatedComments.map((comment) => (
             <article className="platform-comment" key={comment.id}>
               <span className="platform-comment__avatar">{comment.avatar.toUpperCase()}</span>
               <div>
@@ -228,7 +237,88 @@ export default function PlatformProductDetailPage() {
             </article>
           ))}
         </div>
+
+        {/* Pagination Bar */}
+        {totalCommentPages > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '13px',
+            color: '#64748b',
+          }}>
+            <div>
+              Hiển thị {(commentPage - 1) * pageSize + 1} - {Math.min(comments.length, commentPage * pageSize)} trên {comments.length} bình luận
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <button
+                disabled={commentPage === 1}
+                onClick={() => setCommentPage((p) => Math.max(1, p - 1))}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: commentPage === 1 ? '#f8fafc' : '#fff',
+                  cursor: commentPage === 1 ? 'not-allowed' : 'pointer',
+                  opacity: commentPage === 1 ? 0.5 : 1,
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: '#334155'
+                }}
+              >
+                <ChevronLeft size={14} /> Trước
+              </button>
+
+              {Array.from({ length: totalCommentPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCommentPage(p)}
+                  style={{
+                    padding: '6px 11px',
+                    borderRadius: '6px',
+                    border: p === commentPage ? '1px solid #4f46e5' : '1px solid #cbd5e1',
+                    background: p === commentPage ? '#4f46e5' : '#fff',
+                    color: p === commentPage ? '#fff' : '#475569',
+                    fontWeight: p === commentPage ? 600 : 500,
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
+
+              <button
+                disabled={commentPage === totalCommentPages}
+                onClick={() => setCommentPage((p) => Math.min(totalCommentPages, p + 1))}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: commentPage === totalCommentPages ? '#f8fafc' : '#fff',
+                  cursor: commentPage === totalCommentPages ? 'not-allowed' : 'pointer',
+                  opacity: commentPage === totalCommentPages ? 0.5 : 1,
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: '#334155'
+                }}
+              >
+                Sau <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
 }
+

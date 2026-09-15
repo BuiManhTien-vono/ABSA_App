@@ -1,10 +1,7 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const reviewService = {
-  getReviews: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/reviews${query ? `?${query}` : ''}`);
-  },
+  getReviews: (params = {}) => apiClient.get(`/api/v1/reviews${buildQuery(params)}`),
   getReviewById: (id) => apiClient.get(`/api/v1/reviews/${id}`),
   updateStatus: (id, status) => apiClient.put(`/api/v1/reviews/${id}/status`, { status }),
 };

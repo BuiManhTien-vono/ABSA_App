@@ -1,11 +1,8 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const storeService = {
   getPlatforms: () => apiClient.get('/api/v1/platforms'),
-  getStores: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/stores${query ? `?${query}` : ''}`);
-  },
+  getStores: (params = {}) => apiClient.get(`/api/v1/stores${buildQuery(params)}`),
   getStoreById: (id) => apiClient.get(`/api/v1/stores/${id}`),
   createStore: (data) => apiClient.post('/api/v1/stores', data),
   updateStore: (id, data) => apiClient.put(`/api/v1/stores/${id}`, data),

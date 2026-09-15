@@ -1,10 +1,7 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const customerService = {
-  getCustomers: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/customers${query ? `?${query}` : ''}`);
-  },
+  getCustomers: (params = {}) => apiClient.get(`/api/v1/customers${buildQuery(params)}`),
   getCustomerById: (id) => apiClient.get(`/api/v1/customers/${id}`),
   updateRiskLevel: (id, riskLevel) => apiClient.put(`/api/v1/customers/${id}/risk-level`, { riskLevel }),
 };

@@ -1,15 +1,9 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const productService = {
-  getProducts: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/products${query ? `?${query}` : ''}`);
-  },
+  getProducts: (params = {}) => apiClient.get(`/api/v1/products${buildQuery(params)}`),
   getProductById: (id) => apiClient.get(`/api/v1/products/${id}`),
-  getProductReviews: (id, params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/products/${id}/reviews${query ? `?${query}` : ''}`);
-  },
+  getProductReviews: (id, params = {}) => apiClient.get(`/api/v1/products/${id}/reviews${buildQuery(params)}`),
   getSentimentSummary: (id) => apiClient.get(`/api/v1/products/${id}/sentiment-summary`),
 };
 

@@ -1,0 +1,334 @@
+/* Users Page Design System Styling */
+.users-page {
+  padding: 32px 40px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.users-title {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+  letter-spacing: -0.025em;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.users-title-badge {
+  font-size: 0.725rem;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.users-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-slate-500);
+  margin: 0;
+}
+
+.users-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* User Stats Grid */
+.users-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.user-stat-card {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.user-stat-card.total::before { background: var(--color-accent); }
+.user-stat-card.admin::before { background: #f59e0b; }
+.user-stat-card.cskh::before { background: #6366f1; }
+.user-stat-card.manager::before { background: #10b981; }
+
+.user-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-stat-card.total .user-stat-icon { background: var(--color-accent-subtle); color: var(--color-accent); }
+.user-stat-card.admin .user-stat-icon { background: #fef3c7; color: #d97706; }
+.user-stat-card.cskh .user-stat-icon { background: #e0e7ff; color: #4f46e5; }
+.user-stat-card.manager .user-stat-icon { background: #d1fae5; color: #059669; }
+
+.user-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-slate-900);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.user-stat-label {
+  font-size: 0.8rem;
+  color: var(--color-slate-500);
+  font-weight: 500;
+}
+
+/* User Filter Bar */
+.users-filter-bar {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.users-search-box {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+}
+
+.users-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-slate-400);
+  pointer-events: none;
+}
+
+.users-search-input {
+  padding-left: 38px !important;
+  width: 100%;
+}
+
+.users-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* User Table */
+.users-table-container {
+  overflow-x: auto;
+  border-radius: var(--radius-xl);
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.users-table th {
+  background: var(--color-slate-50);
+  padding: 14px 20px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--color-slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.users-table td {
+  padding: 16px 20px;
+  font-size: 0.875rem;
+  color: var(--color-slate-700);
+  border-bottom: 1px solid var(--color-slate-100);
+  vertical-align: middle;
+  transition: background var(--transition-fast);
+}
+
+.users-table tbody tr:hover td {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* User Avatar & Info */
+.user-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--color-slate-900);
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: var(--color-slate-400);
+}
+
+/* Role Badges */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+
+.role-badge.ADMIN {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.role-badge.CSKH_STAFF {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.role-badge.STORE_MANAGER {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Status Indicator */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+
+.status-pill.active {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.status-pill.locked {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-pill.active .status-dot {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  animation: pulse-dot 2s infinite;
+}
+
+.status-pill.locked .status-dot {
+  background: var(--color-danger);
+}
+
+/* Create Modal Role Selector Options */
+.role-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.role-option-card {
+  border: 1.5px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: #fff;
+}
+
+.role-option-card:hover {
+  border-color: var(--color-accent-light);
+}
+
+.role-option-card.selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.role-option-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-slate-800);
+  margin-bottom: 2px;
+}
+
+.role-option-desc {
+  font-size: 0.7rem;
+  color: var(--color-slate-500);
+}
+
+@media (max-width: 1024px) {
+  .users-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .users-page { padding: 16px; }
+  .users-stats-grid { grid-template-columns: 1fr; }
+  .role-options-grid { grid-template-columns: 1fr; }
+}

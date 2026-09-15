@@ -339,59 +339,22 @@ export function findLazadaProductById(productId) {
   return null;
 }
 
-export function generateLazadaMockComments(product, count = 20) {
-  const isClothing = product.categoryId?.includes('ao') || product.categoryId?.includes('quan');
-  const isBeauty = product.categoryId?.includes('duong-da') || product.categoryId?.includes('tpcn') || product.categoryId?.includes('cham-soc-toc');
-  const isTech = product.categoryId?.includes('phone') || product.categoryId?.includes('laptop') || product.categoryId?.includes('phukien');
+import { generateMockComments } from './shopeeData';
 
-  const templates = {
-    general: {
-      POS: [
-        { text: 'Sản phẩm dùng tốt, đóng gói cẩn thận. Shop giao hàng nhanh. Sẽ ủng hộ thêm!', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'POS' }, { aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'POS' }] },
-        { text: 'Rất ưng ý, chất lượng vượt mong đợi so với mức giá. Nhân viên tư vấn nhiệt tình.', aspects: [{ aspect: 'Price_Performance_Ratio', label: 'Mức độ đáng tiền', sentiment: 'POS' }, { aspect: 'Consulting_Attitude', label: 'Thái độ tư vấn Shop', sentiment: 'POS' }] },
-      ],
-      NEU: [
-        { text: 'Hàng bình thường, dùng tạm được. Giao hàng hơi lâu một chút.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng', sentiment: 'NEU' }, { aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'NEU' }] },
-      ],
-      NEG: [
-        { text: 'Bọc hàng sơ sài, hộp bị móp méo hết trơn. Chất lượng không như mô tả.', aspects: [{ aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'NEG' }, { aspect: 'Material_BuildQuality', label: 'Chất lượng vật liệu', sentiment: 'NEG' }] },
-      ]
-    }
-  };
-
-  const domain = isClothing ? 'general' : isBeauty ? 'general' : isTech ? 'general' : 'general'; 
-  const domainTemplates = templates[domain];
-  
-  const comments = [];
-  let idCounter = 1;
-
-  for (let i = 0; i < count; i++) {
-    const rand = Math.random();
-    let sentiment = 'POS';
-    if (rand > 0.9) sentiment = 'NEG';
-    else if (rand > 0.75) sentiment = 'NEU';
-
-    const pool = domainTemplates[sentiment];
-    const template = pool[Math.floor(Math.random() * pool.length)];
-
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 60));
-    
-    comments.push({
-      id: `lzd-cmt-${product.id}-${idCounter++}`,
-      user: VIETNAMESE_NAMES[Math.floor(Math.random() * VIETNAMESE_NAMES.length)],
-      avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
-      rating: sentiment === 'POS' ? (Math.random() > 0.3 ? 5 : 4) : sentiment === 'NEU' ? 3 : (Math.random() > 0.5 ? 2 : 1),
-      content: template.text,
-      createdAt: date.toISOString(),
-      likes: Math.floor(Math.random() * 20),
-      images: Math.random() > 0.7 ? [getSampleImage('GENERAL', Math.floor(Math.random() * 10))] : [],
-      hasPurchase: true,
-      productVariant: 'Mặc định',
-      absaTags: template.aspects,
-      sentiment: sentiment
-    });
-  }
-  
-  return comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+export function generateLazadaMockComments(product, count = 50) {
+  const comments = generateMockComments(product, count);
+  return comments.map((c, i) => ({
+    id: `lzd-cmt-${product.id}-${String(i + 1).padStart(3, '0')}`,
+    user: c.userName,
+    avatar: `https://i.pravatar.cc/150?u=lzd_${i}_${product.id}`,
+    rating: c.starRating,
+    content: c.content,
+    createdAt: new Date(Date.parse('2026-08-30T12:00:00Z') - (i * 14400000)).toISOString(),
+    likes: c.helpfulVotes,
+    images: [],
+    hasPurchase: true,
+    productVariant: c.variant || 'Mặc định',
+    absaTags: c.aspects,
+    sentiment: c.sentiment
+  })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }

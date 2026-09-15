@@ -1,10 +1,7 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const userService = {
-  getUsers: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/users${query ? `?${query}` : ''}`);
-  },
+  getUsers: (params = {}) => apiClient.get(`/api/v1/users${buildQuery(params)}`),
   getUserById: (id) => apiClient.get(`/api/v1/users/${id}`),
   createUser: (data) => apiClient.post('/api/v1/users', data),
   updateUser: (id, data) => apiClient.put(`/api/v1/users/${id}`, data),

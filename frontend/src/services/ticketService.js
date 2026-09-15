@@ -1,10 +1,7 @@
-import apiClient from './apiClient';
+import apiClient, { buildQuery } from './apiClient';
 
 export const ticketService = {
-  getTickets: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/v1/tickets${query ? `?${query}` : ''}`);
-  },
+  getTickets: (params = {}) => apiClient.get(`/api/v1/tickets${buildQuery(params)}`),
   getTicketById: (id) => apiClient.get(`/api/v1/tickets/${id}`),
   assignTicket: (id, userId) => apiClient.put(`/api/v1/tickets/${id}/assign`, { userId }),
   updateStatus: (id, status) => apiClient.put(`/api/v1/tickets/${id}/status`, { status }),

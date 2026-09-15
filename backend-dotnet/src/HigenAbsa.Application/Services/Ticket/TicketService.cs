@@ -1,11 +1,8 @@
-// Services/Ticket/TicketService.cs - CSKH Ticket Management Service
 using Microsoft.EntityFrameworkCore;
 using HigenAbsa.Application.Common;
 using HigenAbsa.Domain.Entities;
-using HigenAbsa.Domain.Entities;
-using HigenAbsa.Application.Common;
+using TicketEntity = HigenAbsa.Domain.Entities.Ticket;
 using HigenAbsa.Application.DTOs.Ticket;
-
 using HigenAbsa.Domain.Interfaces;
 
 namespace HigenAbsa.Application.Services.Ticket;
@@ -30,9 +27,41 @@ public class TicketService : ITicketService
         _uow = uow;
     }
 
+    private async Task EnsureTicketsExistFromNegativeReviewsAsync()
+    {
+        var existingCount = await _uow.Tickets.Query().CountAsync();
+        if (existingCount > 0) return;
+
+        var negativeReviews = await _uow.Reviews.Query()
+            .Include(r => r.AIAnalysis)
+            .Include(r => r.Customer)
+            .Where(r => r.Rating <= 2 || (r.AIAnalysis != null && r.AIAnalysis.OverallSentiment == "NEG"))
+            .ToListAsync();
+
+        if (negativeReviews.Count == 0) return;
+
+        foreach (var r in negativeReviews)
+        {
+            var priority = r.Rating == 1 ? "URGENT" : (r.Rating == 2 ? "HIGH" : "MEDIUM");
+            _uow.Tickets.AddAsync(new TicketEntity
+            {
+                Id = Guid.NewGuid(),
+                ReviewId = r.Id,
+                CustomerId = r.CustomerId ?? Guid.Empty,
+                Priority = priority,
+                Status = "OPEN",
+                CreatedAt = r.ReviewCreatedAt
+            });
+        }
+
+        await _uow.SaveChangesAsync();
+    }
+
     public async Task<PagedResult<TicketListDto>> GetTicketsAsync(
         int page, int pageSize, string? status, string? priority, Guid? assignedToUserId)
     {
+        await EnsureTicketsExistFromNegativeReviewsAsync();
+
         var query = _uow.Tickets.Query()
             .Include(t => t.Review)
             .Include(t => t.Customer)
@@ -146,6 +175,8 @@ public class TicketService : ITicketService
 
     public async Task<TicketStatsDto> GetTicketStatsAsync()
     {
+        await EnsureTicketsExistFromNegativeReviewsAsync();
+
         var stats = await _uow.Tickets.Query()
             .GroupBy(t => t.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })

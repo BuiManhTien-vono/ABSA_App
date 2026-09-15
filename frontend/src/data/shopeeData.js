@@ -460,85 +460,549 @@ const VIETNAMESE_NAMES = [
 ];
 
 // Product review comments generator (generates 50-100 realistic comments per product)
-export function generateMockComments(product, count = 75) {
-  const isClothing = product.categoryId?.includes('ao') || product.categoryId?.includes('quan') || product.categoryId?.includes('vay') || product.categoryId?.includes('khoac') || product.categoryId?.includes('giay');
-  const isBeauty = product.categoryId?.includes('skincare') || product.categoryId?.includes('son') || product.categoryId?.includes('chong-nang') || product.categoryId?.includes('lam-sach') || product.categoryId?.includes('mat-na');
-  const isTech = product.categoryId?.includes('dien-thoai') || product.categoryId?.includes('am-thanh') || product.categoryId?.includes('laptop') || product.categoryId?.includes('smarthome') || product.categoryId?.includes('phu-kien');
+export function getProductDomain(product) {
+  const name = (product.name || '').toLowerCase();
+  const cat = (product.categoryName || '').toLowerCase();
+  const fullText = `${product.name || ''} ${product.categoryName || ''} ${product.categoryId || ''} ${product.sku || ''}`.toLowerCase();
 
-  // Realistic comment templates by domain & sentiment
-  const templates = {
-    clothing: {
-      POS: [
-        { text: 'Chất vải dày dặn, sờ rất mát tay và không nhăn sau khi giặt. Đường may tỉ mỉ không có chỉ thừa nào. Form lên người chuẩn y hình mẫu!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'POS' }, { aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'POS' }] },
-        { text: 'Mặc đi làm ai cũng khen xinh. Vải lụa mềm mướt không bí rít chút nào. Shop tư vấn nhiệt tình chuẩn size, đóng gói cẩn thận hộp cứng cáp.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'POS' }, { aspect: 'Consulting_Attitude', label: 'Thái độ tư vấn Shop', sentiment: 'POS' }] },
-        { text: 'Đáng tiền cực kỳ luôn mọi người ơi! Mua đợt sale áp mã được giảm sâu, chất lượng vượt xa mong đợi. Giao hàng hỏa tốc trong ngày!', aspects: [{ aspect: 'Price_Performance_Ratio', label: 'Mức độ đáng tiền (P/P)', sentiment: 'POS' }, { aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'POS' }] },
-        { text: 'Đã mua lần thứ 3 ở shop rồi vẫn ưng ý 100%. Vải co giãn thoải mái, màu sắc giống hình mô tả 99%. Sẽ tiếp tục ủng hộ shop lâu dài!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'POS' }, { aspect: 'Overall_Sentiment', label: 'Đánh giá chung', sentiment: 'POS' }] },
-        { text: 'Form dáng tôn eo che khuyết điểm rất tốt, mặc lên nhìn thon gọn hẳn. Đóng gói đẹp có túi zip thơm phức, shipper dễ thương.', aspects: [{ aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'POS' }, { aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'POS' }] },
-      ],
-      NEU: [
-        { text: 'Vải khá ổn so với mức giá này, tuy nhiên màu bên ngoài hơi tối hơn trong ảnh một xíu. Mặc vừa người, tạm ổn trong phân khúc.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'NEU' }, { aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'NEU' }] },
-        { text: 'Giao hàng mất gần 4 ngày mới tới nơi, áo có sót chút chỉ thừa ở cổ tay nhưng tự cắt được. Nhìn chung tiền nào của nấy.', aspects: [{ aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'NEU' }, { aspect: 'Price_Performance_Ratio', label: 'Mức độ đáng tiền (P/P)', sentiment: 'NEU' }] },
-        { text: 'Chất liệu tạm được, mặc vào mùa hè thì hơi dày một chút còn mùa thu thì hợp. Size vừa khít nên ai thích mặc rộng nên tăng 1 size.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'NEU' }] },
-        { text: 'Sản phẩm đóng gói túi bóng bình thường, không có hộp. Áo form basic dễ phối đồ, chất lượng trung bình khá.', aspects: [{ aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'NEU' }] },
-      ],
-      NEG: [
-        { text: 'Chất vải mỏng hơn tưởng tượng, giặt máy một lần đã bị xù lông nhẹ ở mép áo. Hơi thất vọng so với quảng cáo.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'NEG' }] },
-        { text: 'Giao hàng quá chậm, mất cả tuần mới nhận được. Nhắn tin hỏi shop thì phản hồi rất hờ hững tự động không giải quyết được gì.', aspects: [{ aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'NEG' }, { aspect: 'Response_Time', label: 'Tốc độ phản hồi Shop', sentiment: 'NEG' }] },
-        { text: 'Bảng size không chuẩn, mình đặt size L theo hướng dẫn mà mặc vào chật cứng không thở nổi. Muốn đổi size mà quy trình phức tạp quá.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'NEG' }, { aspect: 'AfterSales_Complaint', label: 'Xử lý bảo hành & Đổi trả', sentiment: 'NEG' }] },
-      ],
-    },
-    beauty: {
-      POS: [
-        { text: 'Dùng hết 1 lọ rồi quay lại mua thêm. Da ẩm mượt thấy rõ, không bị kích ứng hay nổi mụn li ti. Chất serum thấm cực nhanh không nhờn dính!', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'POS' }] },
-        { text: 'Hàng chính hãng có tem phụ tiếng Việt và mã cào kiểm tra chống giả. Đóng gói bong bóng chống sốc dày dặn nhiều lớp rất có tâm!', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Chính hãng & Tem nhãn', sentiment: 'POS' }, { aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'POS' }] },
-        { text: 'Mùi hương thoang thoảng dịu nhẹ tự nhiên, thoa lên da nâng tone trắng hồng căng bóng chuẩn gái Hàn. Rất đáng đồng tiền bát gạo!', aspects: [{ aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'POS' }, { aspect: 'Price_Performance_Ratio', label: 'Mức độ đáng tiền (P/P)', sentiment: 'POS' }] },
-        { text: 'Shop tặng kèm nhiều sample dùng thử siêu thích! Giao hàng siêu tốc trong 24h, tư vấn nhiệt tình giải thích từng loại da cụ thể.', aspects: [{ aspect: 'Consulting_Attitude', label: 'Thái độ tư vấn Shop', sentiment: 'POS' }, { aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'POS' }] },
-      ],
-      NEU: [
-        { text: 'Mới dùng được 3 ngày chưa thấy tác dụng rõ rệt, để dùng thêm một thời gian xem thế nào. Cảm giác bôi lên da mát mát dễ chịu.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'NEU' }] },
-        { text: 'Chất kem hơi đặc nên cần tán nhanh tay kẻo vệt trắng, bù lại kiềm dầu ổn định được tầm 4 tiếng. Giá cả vừa túi tiền sinh viên.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'NEU' }, { aspect: 'Price_Promotion', label: 'Giá bán & Khuyến mãi', sentiment: 'NEU' }] },
-        { text: 'Sản phẩm date xa 2028, tuy nhiên vòi pump hơi cứng khi ấn lần đầu. Tạm hài lòng với mức giá sale.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'NEU' }] },
-      ],
-      NEG: [
-        { text: 'Da mình dùng bị châm chích ngứa rát nhẹ quanh cánh mũi. Có lẽ sản phẩm không phù hợp với da quá nhạy cảm.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'NEG' }, { aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'NEG' }] },
-        { text: 'Hộp giấy bên ngoài bị móp méo rách góc trong quá trình vận chuyển. May là chai thủy tinh bên trong không vỡ nhưng nhìn mất thẩm mỹ.', aspects: [{ aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'NEG' }] },
-        { text: 'Son lên màu không giống swatch trên hình của shop, màu thực tế ngả tím nhiều hơn. Đánh lên hơi khô môi.', aspects: [{ aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'NEG' }] },
-      ],
-    },
-    tech: {
-      POS: [
-        { text: 'Chất âm cực đỉnh trong tầm giá! Âm bass chắc nịch không bị rè ở âm lượng lớn, tính năng chống ồn ANC hoạt động hiệu quả bất ngờ!', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'POS' }, { aspect: 'Price_Performance_Ratio', label: 'Mức độ đáng tiền (P/P)', sentiment: 'POS' }] },
-        { text: 'Hàng nguyên seal mới 100%, bảo hành điện tử kích hoạt chuẩn ngày nhận. Pin trâu dùng liên tục 3 ngày mới phải sạc lại!', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Chính hãng & Tem nhãn', sentiment: 'POS' }, { aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'POS' }] },
-        { text: 'Thiết kế đẹp mắt, hoàn thiện kim loại cao cấp cầm đầm tay. Kết nối Bluetooth nhanh như chớp, độ trễ cực thấp chơi game rất mượt.', aspects: [{ aspect: 'Appearance_Design', label: 'Kiểu dáng & Mẫu mã', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'POS' }] },
-        { text: 'Shop hỗ trợ kỹ thuật qua Zalo cực kỳ nhiệt tình và chuyên nghiệp. Đóng thùng carton có chèn xốp bóng khí dày cộp an tâm tuyệt đối.', aspects: [{ aspect: 'Consulting_Attitude', label: 'Thái độ tư vấn Shop', sentiment: 'POS' }, { aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'POS' }] },
-      ],
-      NEU: [
-        { text: 'Dùng ổn trong tầm giá này. Kết nối đôi lúc bị chập chờn khi cách xa trên 8 mét hoặc có vật cản tường. Pin được khoảng 5-6 tiếng.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'NEU' }] },
-        { text: 'Micro đàm thoại mức độ tạm chấp nhận, ngoài đường gió to thì bên kia nghe hơi nhỏ. Phần mềm đi kèm giao diện hơi khó dùng chút.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm sử dụng', sentiment: 'NEU' }] },
-        { text: 'Thời gian giao hàng hơi lâu hơn dự kiến 2 ngày nhưng bù lại shipper gọi điện trước lịch sự. Sản phẩm đúng như mô tả.', aspects: [{ aspect: 'Delivery_Speed', label: 'Tốc độ giao hàng', sentiment: 'NEU' }] },
-      ],
-      NEG: [
-        { text: 'Dùng được đúng 2 tuần thì tai bên phải bị mất tiếng chập chờn. Liên hệ gửi bảo hành thì quy trình rườm rà bắt đợi kiểm tra lâu.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu & Độ bền', sentiment: 'NEG' }, { aspect: 'AfterSales_Complaint', label: 'Xử lý bảo hành & Đổi trả', sentiment: 'NEG' }] },
-        { text: 'Quảng cáo sạc nhanh 65W nhưng cắm sạc thực tế chỉ nhận 25-30W, củ sạc rất nóng sau 30 phút sử dụng liên tục.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng & Chức năng', sentiment: 'NEG' }] },
-        { text: 'Hộp sản phẩm bị rách niêm phong seal từ trước khi giao, cảm giác như hàng đã bị bóc ra xem. Hỏi shop thì không nhận được câu trả lời thỏa đáng.', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Chính hãng & Tem nhãn', sentiment: 'NEG' }, { aspect: 'Response_Time', label: 'Tốc độ phản hồi Shop', sentiment: 'NEG' }] },
-      ],
-    },
-  };
+  // 1. Beauty & Skincare & Perfume FIRST (Catches "nước hoa", "sáp thơm", "làm đẹp" BEFORE food checks for "trà")
+  if (name.includes('nước hoa') || name.includes('sáp thơm') || name.includes('skincare') || name.includes('son') || name.includes('mỹ phẩm') || name.includes('dưỡng da') || name.includes('tẩy trang') || name.includes('mặt nạ') || name.includes('serum') || name.includes('sữa rửa mặt') || cat.includes('làm đẹp') || cat.includes('mỹ phẩm')) {
+    return 'beauty';
+  }
 
-  const domain = isClothing ? 'clothing' : isBeauty ? 'beauty' : 'tech';
-  const domainTemplates = templates[domain] || templates.clothing;
+  // 2. Apparel / Clothing / Accessories
+  if (name.includes('áo') || name.includes('khoác') || name.includes('chống nắng') || name.includes('quần') || name.includes('váy') || name.includes('đầm') || name.includes('giày') || name.includes('dép') || name.includes('túi') || name.includes('balo') || name.includes('blazer') || name.includes('croptop') || name.includes('sơ mi') || name.includes('thun') || name.includes('hoodie') || name.includes('jacket') || cat.includes('thời trang') || cat.includes('áo') || cat.includes('quần') || cat.includes('váy') || cat.includes('giày')) {
+    return 'clothing';
+  }
+
+  // 3. Home & Kitchen & Household Items (Thermos, Lunchbox, Pillow, Towels, Decor, Lighting)
+  if (name.includes('bình giữ nhiệt') || name.includes('hộp cơm') || name.includes('nồi chiên') || name.includes('lau nhà') || name.includes('khăn') || name.includes('gối') || name.includes('bếp') || name.includes('gia dụng') || name.includes('đèn') || name.includes('nội thất') || name.includes('decor') || cat.includes('gia dụng') || cat.includes('nhà bếp') || cat.includes('đồ dùng nhà')) {
+    return 'home';
+  }
+
+  // 4. Baby & Mother Items
+  if (name.includes('bỉm') || name.includes('tã') || name.includes('sữa công thức') || name.includes('xe tập đi') || name.includes('sơ sinh') || name.includes('núm ti') || name.includes('bình sữa')) {
+    return 'baby';
+  }
+
+  // 5. Tech / Electronics / Gadgets (Headset, Phone stand, Keyboard, Charger, Massage)
+  if (name.includes('điện thoại') || name.includes('laptop') || name.includes('tai nghe') || name.includes('bàn phím') || name.includes('chuột') || name.includes('sạc') || name.includes('cáp') || name.includes('ốp') || name.includes('kính cường lực') || name.includes('máy tính') || name.includes('loa') || name.includes('massage') || name.includes('kệ để điện thoại') || cat.includes('điện tử') || cat.includes('phụ kiện')) {
+    return 'tech';
+  }
+
+  // 6. Books & Stationery & Stickers
+  if (name.includes('sách') || name.includes('sổ') || name.includes('bút') || name.includes('sticker') || name.includes('văn phòng phẩm') || name.includes('journal') || cat.includes('văn phòng phẩm')) {
+    return 'book';
+  }
+
+  // 7. Sports & Outdoor
+  if (name.includes('lều') || name.includes('thảm yoga') || name.includes('chạy bộ') || name.includes('cắm trại') || name.includes('dã ngoại')) {
+    return 'sport';
+  }
+
+  // 8. Food & Organic Nuts & Tea Drink (Only if "trà" is actual tea drink, e.g. "Trà thảo mộc", "Trà gạo lứt")
+  if (name.includes('thực phẩm') || name.includes('trái cây') || name.includes('hạt') || name.includes('ngũ cốc') || name.includes('granola') || name.includes('trà thảo mộc') || name.includes('trà gạo lứt') || name.includes('yến mạch')) {
+    return 'food';
+  }
+
+  // Fallbacks using fullText if name alone didn't match
+  if (fullText.includes('nước hoa') || fullText.includes('skincare') || fullText.includes('son') || fullText.includes('mỹ phẩm') || fullText.includes('beauty')) return 'beauty';
+  if (fullText.includes('bình giữ nhiệt') || fullText.includes('gia dụng') || fullText.includes('home') || fullText.includes('kitchen')) return 'home';
+  if (fullText.includes('bỉm') || fullText.includes('tã') || fullText.includes('sữa')) return 'baby';
+  if (fullText.includes('phone') || fullText.includes('laptop') || fullText.includes('tai nghe') || fullText.includes('bàn phím') || fullText.includes('tech') || fullText.includes('audio')) return 'tech';
+  if (fullText.includes('sách') || fullText.includes('book')) return 'book';
+  if (fullText.includes('sport') || fullText.includes('thể thao')) return 'sport';
+  if (fullText.includes('thực phẩm') || fullText.includes('hạt') || fullText.includes('food')) return 'food';
+  if (fullText.includes('áo') || fullText.includes('quần') || fullText.includes('váy') || fullText.includes('giày') || fullText.includes('thời trang') || fullText.includes('fashion')) return 'clothing';
+
+  return 'general';
+}
+
+export function getExactItemData(product) {
+  const name = (product.name || '').toLowerCase();
+  const cat = (product.categoryName || '').toLowerCase();
+
+  // 1. Hộp cơm giữ nhiệt / cà mên / bento
+  if (name.includes('hộp cơm') || name.includes('cà mên') || name.includes('bento')) {
+    return {
+      variants: ['Phân loại: Dung tích 2 tầng - Inox 304', 'Phân loại: Bộ 3 Tầng Kèm Muỗng Nĩa', 'Phân loại: Màu Xanh Mint 2 Tầng', 'Phân loại: Màu Hồng Pastel 2 Tầng'],
+      templates: {
+        POS: [
+          { text: 'Hộp cơm 2 tầng giữ nóng cơm canh trưa ăn vẫn bốc khói! Khay inox 304 tháo rời dễ rửa không bám mỡ.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu Inox 304', sentiment: 'POS' }, { aspect: 'Performance_Functionality', label: 'Khả năng giữ nóng', sentiment: 'POS' }] },
+          { text: 'Nắp gài 4 góc khóa siêu chắc chắn, tầng đựng canh có ron cao su chống tràn tuyệt đối không rỉ ra túi mang cơm.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Nắp gài chống tràn', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Thiết kế tiện lợi', sentiment: 'POS' }] },
+          { text: 'Thiết kế 2 tầng chia ngăn tiện lợi không lo trộn lẫn thức ăn. Tặng kèm bộ muỗng nĩa xịn xò!', aspects: [{ aspect: 'Appearance_Design', label: 'Thiết kế 2 tầng', sentiment: 'POS' }, { aspect: 'Price_Performance_Ratio', label: 'Quà tặng kèm', sentiment: 'POS' }] },
+          { text: 'Mang cơm đi làm văn phòng quá chuẩn. Giữ ấm tầm 4-5 tiếng, chất liệu inox an toàn vệ sinh.', aspects: [{ aspect: 'Usability_Experience', label: 'Dùng văn phòng', sentiment: 'POS' }, { aspect: 'Material_BuildQuality', label: 'Chất liệu Inox 304', sentiment: 'POS' }] },
+          { text: 'Shop đóng gói thùng bọc chống sốc siêu cẩn thận. Hộp cơm đẹp sang trọng hơn mong đợi!', aspects: [{ aspect: 'External_Packaging', label: 'Đóng gói hàng', sentiment: 'POS' }, { aspect: 'Appearance_Design', label: 'Thiết kế đẹp', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Hộp cơm giữ nhiệt ở mức vừa phải, mang từ 7h sáng tới 12h trưa cơm còn ấm nhẹ.', aspects: [{ aspect: 'Performance_Functionality', label: 'Thời gian giữ ấm', sentiment: 'NEU' }] },
+          { text: 'Dung tích khay hơi nhỏ với bạn nam ăn nhiều, các bạn nữ hoặc dân văn phòng thì vừa vặn.', aspects: [{ aspect: 'Usability_Experience', label: 'Dung tích khay', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Khay nắp gài tầng dưới hơi xộc xệch, để canh nghiêng bị rỉ nước ra túi mang cơm!', aspects: [{ aspect: 'Product_Defect', label: 'Nắp gài bị rò nước', sentiment: 'NEG' }, { aspect: 'Performance_Functionality', label: 'Khả năng đậy kín kém', sentiment: 'NEG' }] },
+          { text: 'Quai xách hộp cơm bị gãy ngàm nhựa khi mới dùng đợt thứ 2. Nhắn hỗ trợ shop trả lời rất chậm.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất lượng quai nhựa', sentiment: 'NEG' }, { aspect: 'Response_Time', label: 'Phản hồi CSKH', sentiment: 'NEG' }] },
+          { text: 'Giữ nhiệt kém, để được tầm 2 tiếng là cơm canh nguội ngắt. Thất vọng so với mô tả.', aspects: [{ aspect: 'Performance_Functionality', label: 'Giữ nhiệt kém', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 2. Bình giữ nhiệt (chỉ bình đựng nước)
+  if (name.includes('bình giữ nhiệt') || name.includes('bình nước')) {
+    return {
+      variants: ['Phân loại: Dung tích 600ml - Inox 304 Bạc', 'Phân loại: Dung tích 600ml - Đen Nhám', 'Phân loại: Dung tích 600ml - Xanh Rêu', 'Phân loại: Combo Bình + Dây Treo'],
+      templates: {
+        POS: [
+          { text: 'Bình giữ nhiệt 600ml giữ đá lạnh từ sáng 7h tới 6h chiều vẫn còn nguyên cục đá! Inox 304 không ám mùi kim loại.', aspects: [{ aspect: 'Performance_Functionality', label: 'Khả năng giữ đá', sentiment: 'POS' }, { aspect: 'Material_BuildQuality', label: 'Inox 304 cao cấp', sentiment: 'POS' }] },
+          { text: 'Nắp bật tiện lợi có khóa gài chống tràn tuyệt đối, để nằm ngang trong balo không rỉ một giọt nước.', aspects: [{ aspect: 'Usability_Experience', label: 'Nắp bật chống tràn', sentiment: 'POS' }] },
+          { text: 'Thiết kế bình sơn nhám sang trọng cầm đầm tay. Có quai xách silicone đi tập gym hay đi học rất tiện.', aspects: [{ aspect: 'Appearance_Design', label: 'Sơn nhám đầm tay', sentiment: 'POS' }] },
+          { text: 'Khả năng giữ nóng xuất sắc, pha trà hay cà phê từ sáng đến trưa vẫn bốc khói ấm áp.', aspects: [{ aspect: 'Performance_Functionality', label: 'Giữ nóng xuất sắc', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Bình giữ nhiệt dùng khá ổn, tầm 6-8 tiếng nước ấm nguội dần. Sơn nắp nhựa hơi bám vân tay nhẹ.', aspects: [{ aspect: 'Performance_Functionality', label: 'Thời gian giữ nhiệt', sentiment: 'NEU' }] },
+          { text: 'Dung tích 600ml vừa vặn dùng cá nhân, cầm đi làm đi học gọn nhẹ.', aspects: [{ aspect: 'Usability_Experience', label: 'Dung tích cá nhân', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Bình bị rỉ nước ở ron silicone nắp bật khi để nằm ngang trong balo. Giữ đá chỉ được 3 tiếng là tan hết.', aspects: [{ aspect: 'Product_Defect', label: 'Lỗi rò nước nắp', sentiment: 'NEG' }, { aspect: 'Performance_Functionality', label: 'Giữ nhiệt kém', sentiment: 'NEG' }] },
+          { text: 'Vỏ bình bị móp gầm đáy khi nhận hàng do shipper quăng quật, sơn đáy bị tróc.', aspects: [{ aspect: 'External_Packaging', label: 'Vận chuyển méo móp', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 3. Đèn ngủ / Đèn cảm biến
+  if (name.includes('đèn ngủ') || name.includes('đèn cảm biến') || name.includes('đèn led') || name.includes('đèn decor') || name.includes('chiếu sáng')) {
+    return {
+      variants: ['Phân loại: Ánh Sáng Vàng Ấm - Cắm Điện Direct', 'Phân loại: Ánh Sáng Trắng - Cảm Ứng Chuyển Động', 'Phân loại: Combo 2 Đèn Cảm Biến'],
+      templates: {
+        POS: [
+          { text: 'Đèn ngủ cảm biến ánh sáng tự động bật khi trời tối và tắt khi trời sáng, công suất tiết kiệm điện tuyệt vời!', aspects: [{ aspect: 'Performance_Functionality', label: 'Cảm biến tự động', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Tiết kiệm điện', sentiment: 'POS' }] },
+          { text: 'Ánh sáng vàng dịu mắt không gây chói cho em bé và người già khi dậy đi vệ sinh ban đêm.', aspects: [{ aspect: 'Usability_Experience', label: 'Ánh sáng dịu mắt', sentiment: 'POS' }] },
+          { text: 'Thiết kế nhỏ gọn cắm trực tiếp ổ điện gọn gàng, cảm biến nhận diện ánh sáng siêu nhạy.', aspects: [{ aspect: 'Appearance_Design', label: 'Nhỏ gọn cắm điện', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Đèn cảm biến ánh sáng hoạt động ổn định. Bán kính cảm biến nhận diện tốt trong tầm 2-3 mét.', aspects: [{ aspect: 'Performance_Functionality', label: 'Bán kính cảm biến', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Cảm biến nhạy quá mức, ban ngày phòng hơi u uất chút đã tự bật sáng hao điện.', aspects: [{ aspect: 'Product_Defect', label: 'Cảm biến quá nhạy', sentiment: 'NEG' }] },
+          { text: 'Mới cắm được 3 ngày thì bóng đèn bị chập chớp tắt liên tục rồi hỏng luôn.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Lỗi bóng chập hỏng', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 4. Khăn lau / Set khăn
+  if (name.includes('khăn') || name.includes('khăn lau')) {
+    return {
+      variants: ['Phân loại: Set 5 Khăn Cotton Thấm Nước', 'Phân loại: Set 10 Khăn Đa Năng Treo Bếp', 'Phân loại: Màu Nhã Nhặn Mix'],
+      templates: {
+        POS: [
+          { text: 'Khăn lau tay chất liệu cotton siêu mềm mịn thấm nước cực tốt, lau xong khô ráo không rụng bông!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Cotton mềm thấm nước', sentiment: 'POS' }] },
+          { text: 'Set 5 khăn màu sắc nhã nhặn xinh xắn có dây treo tiện lợi treo ở bếp và nhà tắm.', aspects: [{ aspect: 'Appearance_Design', label: 'Màu nhã nhặn có dây treo', sentiment: 'POS' }] },
+          { text: 'Khăn giặt không bị xù lông hay phai màu, lau bàn ăn hay chén đĩa sạch bóng.', aspects: [{ aspect: 'Usability_Experience', label: 'Lau siêu sạch', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Khăn hơi mỏng hơn hình một chút nhưng độ thấm hút nước dùng vẫn rất ổn.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Độ dày khăn', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Khăn giặt lần đầu bị rụng bông sợi mịn dính đầy tay. Chất vải hóa học hơi hôi.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Rụng bông xù sợi', sentiment: 'NEG' }] },
+          { text: 'Giao thiếu 1 khăn trong set 5 khăn. Đã nhắn phản hồi cho shop.', aspects: [{ aspect: 'Fulfillment_Accuracy', label: 'Giao thiếu số lượng', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 5. Túi tote / Canvas
+  if (name.includes('túi tote') || name.includes('túi canvas') || name.includes('túi xách')) {
+    return {
+      variants: ['Phân loại: Vải Canvas Trắng - Kèm Khóa Kéo', 'Phân loại: Vải Canvas Đen - Họa Tiết', 'Phân loại: Size L Đựng Laptop 14 inch'],
+      templates: {
+        POS: [
+          { text: 'Túi tote vải canvas dày dặn may đường chỉ chắc chắn, đựng vừa laptop 14 inch và sách vở A4!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Canvas dày dặn', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Đựng vừa laptop', sentiment: 'POS' }] },
+          { text: 'Form túi đứng đẹp có quai xách đai vai đầm dặn. Bên trong có ngăn nhỏ kéo khóa tiện dùng.', aspects: [{ aspect: 'Appearance_Design', label: 'Form túi & Quai đầm', sentiment: 'POS' }] },
+          { text: 'Họa tiết in sắc nét không lem khi giặt. Phong cách Hàn Quốc trẻ trung xinh xắn.', aspects: [{ aspect: 'Appearance_Design', label: 'In sắc nét phong cách', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Vải canvas hơi mỏng nhẹ, túi không có mút lót đáy nên để đồ quá nặng hơi trũng.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Không lót mút đáy', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Quai túi bị tuột chỉ bung mép khi đựng 2 cuốn sách nặng. Đường may gia công sơ sài.', aspects: [{ aspect: 'Product_Defect', label: 'Tuột chỉ quai túi', sentiment: 'NEG' }] },
+          { text: 'Túi bị dính vệt bẩn đen khi nhận hàng, khâu kéo khóa bị kẹt không trôi.', aspects: [{ aspect: 'External_Packaging', label: 'Túi dính bẩn', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 6. Máy massage
+  if (name.includes('massage') || name.includes('mát xa')) {
+    return {
+      variants: ['Phân loại: Máy 4 Đầu Massage - Màu Đen', 'Phân loại: Máy Mini Cầm Tay - Màu Hồng', 'Phân loại: Sạc Type-C 6 Nấc Rung'],
+      templates: {
+        POS: [
+          { text: 'Máy massage 4 đầu thay thế đấm bóp êm dịu bớt mỏi cổ vai rung đầm tay cực thích!', aspects: [{ aspect: 'Performance_Functionality', label: 'Rung đầm bớt mỏi', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: '4 đầu thay thế', sentiment: 'POS' }] },
+          { text: 'Pin máy dùng trâu sạc Type-C tiện lợi. 6 nấc độ rung điều chỉnh từ nhẹ tới mạnh vừa ý.', aspects: [{ aspect: 'Performance_Functionality', label: 'Pin trâu & 6 nấc rung', sentiment: 'POS' }] },
+          { text: 'Thiết kế nhỏ gọn vừa tay cầm đi du lịch hay làm việc văn phòng đều dùng được.', aspects: [{ aspect: 'Appearance_Design', label: 'Nhỏ gọn cầm tay', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Máy rung khá mạnh ở nấc 1, dùng hơi tê tay nhẹ nếu cầm lâu liên tục 20 phút.', aspects: [{ aspect: 'Usability_Experience', label: 'Lực rung mạnh', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Máy chạy được 5 phút thì nóng ran động cơ và tự tắt nguồn không bật lên lại được.', aspects: [{ aspect: 'Product_Defect', label: 'Động cơ nóng tự tắt', sentiment: 'NEG' }] },
+          { text: 'Đầu massage bằng nhựa cứng đấm vào cơ bị đau rát chứ không êm như quảng cáo.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Đầu nhựa cứng đau', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 7. Sticker / Journal
+  if (name.includes('sticker') || name.includes('dán sổ') || name.includes('journal')) {
+    return {
+      variants: ['Phân loại: Bộ 100 Tấm Translucent', 'Phân loại: Set Sticker Vintage Journal', 'Phân loại: Hộp Nhựa Trong'],
+      templates: {
+        POS: [
+          { text: 'Bộ sticker họa tiết vô cùng đáng yêu in sắc nét chuẩn màu, keo dán dính chắc chống nước tốt!', aspects: [{ aspect: 'Appearance_Design', label: 'In sắc nét dễ thương', sentiment: 'POS' }, { aspect: 'Material_BuildQuality', label: 'Keo dính tốt', sentiment: 'POS' }] },
+          { text: 'Nhiều hình đa dạng tha hồ trang trí sổ tay journal hay dán nón bảo hiểm, laptop.', aspects: [{ aspect: 'Usability_Experience', label: 'Hình đa dạng dán sổ', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Sticker hơi khó bóc lớp đế nilon phía sau một chút đối với hình mỏng nhỏ.', aspects: [{ aspect: 'Usability_Experience', label: 'Thao tác bóc đế', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Keo sticker dán rất yếu vừa dán lên sổ 5 phút đã bị bung góc. Mực in bị lem nhòe.', aspects: [{ aspect: 'Product_Defect', label: 'Keo yếu bung góc', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 8. Kệ điện thoại / Giá đỡ
+  if (name.includes('kệ để điện thoại') || name.includes('giá đỡ') || name.includes('kệ điện thoại')) {
+    return {
+      variants: ['Phân loại: Nhôm Nguyên Khối - Gấp Gọn', 'Phân loại: Hợp Kim Xoay 360 Độ', 'Phân loại: Màu Bạc Ánh Kim'],
+      templates: {
+        POS: [
+          { text: 'Kệ điện thoại bằng hợp kim nhôm nặng đầm bám chắc bàn chống trượt silicone cực tốt!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Hợp kim nhôm đầm', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Bám chắc chống trượt', sentiment: 'POS' }] },
+          { text: 'Khớp xoay gập đa góc độ chắc chắn không bị xệ khi để iPad hay điện thoại nặng.', aspects: [{ aspect: 'Performance_Functionality', label: 'Khớp xoay chắc chắn', sentiment: 'POS' }] },
+          { text: 'Gấp gọn phẳng đét bỏ túi xách đi làm đi cà phê cực kỳ tiện lợi.', aspects: [{ aspect: 'Appearance_Design', label: 'Gấp gọn tiện lợi', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Kệ hợp kim nhôm nhưng chân hơi nhẹ nếu để máy tính bảng 11 inch theo chiều dọc.', aspects: [{ aspect: 'Usability_Experience', label: 'Độ cân bằng iPad', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Lớp đệm silicone lót đáy bị bung keo rơi mất. Khớp xoay lỏng lẻo để điện thoại vào là sập.', aspects: [{ aspect: 'Product_Defect', label: 'Bung đệm silicone', sentiment: 'NEG' }, { aspect: 'Material_BuildQuality', label: 'Khớp xoay lỏng lẻo', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 9. Nước hoa sáp / Sáp thơm
+  if (name.includes('nước hoa sáp') || name.includes('sáp thơm') || name.includes('nước hoa')) {
+    return {
+      variants: ['Phân loại: Hương Trà Trắng - 15g', 'Phân loại: Hương Hoa Nhài Dịu Nhẹ', 'Phân loại: Hũ Vỏ Kim Loại Vàng Gold'],
+      templates: {
+        POS: [
+          { text: 'Nước hoa sáp hương trà trắng thanh mát dịu nhẹ sang chảnh, thoa lên cổ tay lưu hương 6-8 tiếng!', aspects: [{ aspect: 'Performance_Functionality', label: 'Mùi hương & Lưu hương', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Thoa dịu nhẹ', sentiment: 'POS' }] },
+          { text: 'Hũ sáp vỏ kim loại nhỏ xinh tiện bỏ túi áo túi xách mang đi làm đi chơi.', aspects: [{ aspect: 'Appearance_Design', label: 'Hũ kim loại nhỏ xinh', sentiment: 'POS' }] },
+          { text: 'Mùi thơm không bị nồng gắt hóa chất, dịu ngọt thư thái như spa cao cấp.', aspects: [{ aspect: 'Performance_Functionality', label: 'Mùi thư thái không nồng', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Mùi hương tỏa nhẹ trong bán kính 1 cánh tay, hợp dùng mùa hè khô thoáng.', aspects: [{ aspect: 'Performance_Functionality', label: 'Độ tỏa hương', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Nước hoa sáp hầu như không có mùi thơm gì, thoa lên 15 phút đã bay sạch mùi. Hũ sáp bị trầy xước.', aspects: [{ aspect: 'Product_Defect', label: 'Bay mùi nhanh', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 10. Gối cổ / Memory foam
+  if (name.includes('gối cổ') || name.includes('memory foam') || name.includes('cao su non')) {
+    return {
+      variants: ['Phân loại: Memory Foam Nhung - Xám', 'Phân loại: Gối Cổ Cao Su Non - Xanh', 'Phân loại: Vỏ Nhung Có Khóa Kéo'],
+      templates: {
+        POS: [
+          { text: 'Gối cổ memory foam ruột cao su non đàn hồi chậm siêu êm nâng đỡ đốt sống cổ tuyệt vời!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Memory foam đàn hồi', sentiment: 'POS' }, { aspect: 'Usability_Experience', label: 'Nâng đỡ đốt sống cổ', sentiment: 'POS' }] },
+          { text: 'Vải bọc gối nhung mềm mịn thoáng khí có khóa kéo tháo ra giặt dễ dàng.', aspects: [{ aspect: 'Usability_Experience', label: 'Vỏ nhung dễ tháo giặt', sentiment: 'POS' }] },
+          { text: 'Đi xe khách hay máy bay có gối này ngủ không bao giờ bị nghẹo cổ mỏi vai.', aspects: [{ aspect: 'Performance_Functionality', label: 'Chống mỏi nghẹo cổ', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Gối mới bóc hộp có mùi cao su nhẹ, để quạt thoáng 1 ngày là hết mùi.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Mùi cao su mới', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Ruột gối bị lún méo móp không phục hồi lại hình dáng ban đầu. Vải bọc bị bục chỉ.', aspects: [{ aspect: 'Product_Defect', label: 'Ruột lún không hồi', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 11. Áo khoác chống nắng
+  if (name.includes('áo khoác chống nắng') || name.includes('áo chống nắng')) {
+    return {
+      variants: ['Màu Sắc: Ghi Xám - Size L', 'Màu Sắc: Xanh Mint - Size M', 'Màu Sắc: Hồng Baby - Size S', 'Màu Sắc: Kem Sữa - Size XL'],
+      templates: {
+        POS: [
+          { text: 'Áo khoác chống nắng vải thun lạnh cản UV tốt, mặt vải thoáng mát có xỏ ngón và mũ trùm đầu che kín mặt!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Thun lạnh cản UV', sentiment: 'POS' }, { aspect: 'Performance_Functionality', label: 'Mũ trùm & Xỏ ngón', sentiment: 'POS' }] },
+          { text: 'Chất vải dày dặn chống nắng tốt, mặc đi giữa trưa nắng không bị rát da. Có túi khóa kéo bên trong để điện thoại.', aspects: [{ aspect: 'Usability_Experience', label: 'Chống rát nắng tốt', sentiment: 'POS' }] },
+          { text: 'Áo form rộng thoải mái, đường may viền tỉ mỉ. Thích nhất là cái khẩu trang kéo cao tích hợp sẵn!', aspects: [{ aspect: 'Appearance_Design', label: 'Khẩu trang tích hợp', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Áo chống nắng tạm ổn, hơi nóng nhẹ khi đi giữa trời trưa hè 39-40 độ.', aspects: [{ aspect: 'Performance_Functionality', label: 'Độ thoáng khí', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Khóa kéo bị rít giật mạnh nấc kẹp vải. Mới giặt 1 nước đã bị xù lông nhẹ ở tay áo.', aspects: [{ aspect: 'Product_Defect', label: 'Khóa kéo rít & Xù lông', sentiment: 'NEG' }] },
+          { text: 'Áo giao sai màu, đặt màu ghi xám mà shop giao màu hồng. Nhắn CSKH đổi hàng lâu rep.', aspects: [{ aspect: 'Fulfillment_Accuracy', label: 'Giao sai màu', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 12. Bỉm / Tã / Sữa
+  if (name.includes('bỉm') || name.includes('tã') || name.includes('sữa')) {
+    return {
+      variants: ['Phân loại: Bịch XL 54 miếng', 'Phân loại: Lon 800g (1-3 tuổi)', 'Phân loại: Combo 2 Bịch Tiết Kiệm'],
+      templates: {
+        POS: [
+          { text: 'Bỉm mỏng nhẹ thấm hút siêu tốt, mông bé khô thoáng cả đêm không bị hăm hay mẩn đỏ.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Bông dịu nhẹ', sentiment: 'POS' }, { aspect: 'Performance_Functionality', label: 'Thấm hút chống hăm', sentiment: 'POS' }] },
+          { text: 'Sữa thơm ngậy mát lành bé rất thích uống, date xa tận 2028. Shop đóng bọc xốp chống sốc chắc chắn!', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Hàng date xa', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Form bỉm hơi nhỏ so với cân nặng bao bì, bé đùi to nên nhích lên 1 size.', aspects: [{ aspect: 'Usability_Experience', label: 'Kích cỡ size bỉm', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Bỉm bị vón cục sau khi thấm nước, bé đeo vào bị mẩn đỏ ngứa da đùi. Rất lo lắng!', aspects: [{ aspect: 'Product_Defect', label: 'Vón cục thấm kém', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 13. Tai nghe / Headset
+  if (name.includes('tai nghe') || name.includes('tws') || name.includes('headphone')) {
+    return {
+      variants: ['Phân loại: Bluetooth 5.3 - Đen Nhám', 'Phân loại: ANC Chống Ồn - Trắng Tinh Khôi', 'Phân loại: Bản Gaming Pin 40h'],
+      templates: {
+        POS: [
+          { text: 'Tai nghe âm bass đầm chắc không bị rè ở âm lượng lớn, tính năng chống ồn ANC hoạt động hiệu quả bất ngờ!', aspects: [{ aspect: 'Sound_Quality', label: 'Âm bass chắc & ANC', sentiment: 'POS' }] },
+          { text: 'Mic thu âm đàm thoại trong vắt không bị rè hay lẫn tạp âm gió khi đi ngoài đường. Pin dùng liên tục 3 ngày!', aspects: [{ aspect: 'Performance_Functionality', label: 'Mic đàm thoại & Pin trâu', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Dùng ổn trong tầm giá này. Kết nối đôi lúc chập chờn nhẹ khi cách xa trên 8 mét.', aspects: [{ aspect: 'Performance_Functionality', label: 'Khả năng kết nối', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Dùng được 2 tuần thì tai bên phải bị mất tiếng chập chờn. Liên hệ bảo hành quy trình lâu.', aspects: [{ aspect: 'Product_Defect', label: 'Lỗi tai bên phải', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 14. Bàn phím / Chuột
+  if (name.includes('bàn phím') || name.includes('chuột')) {
+    return {
+      variants: ['Phân loại: Switch Red - LED RGB', 'Phân loại: Switch Blue - Trắng', 'Phân loại: Bluetooth Không Dây'],
+      templates: {
+        POS: [
+          { text: 'Bàn phím gõ siêu nẩy êm tay, led RGB đẹp chill. Kết nối Bluetooth mượt không độ trễ chơi game tốt!', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm gõ mượt', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Vỏ nhựa bám nhẹ vân tay, dùng ổn định văn phòng.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Gia công vỏ nhựa', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Bàn phím bị liệt hàng phím số sau 3 ngày sử dụng. Nhắn tin CSKH không reply.', aspects: [{ aspect: 'Product_Defect', label: 'Liệt phím', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 15. Nồi chiên / Robot / Máy lọc / Bếp / Ấm / Ép
+  if (name.includes('nồi chiên') || name.includes('robot') || name.includes('máy lọc') || name.includes('ấm siêu tốc') || name.includes('máy ép')) {
+    return {
+      variants: ['Phân loại: Dung tích Lớn 6L - Điện Tử', 'Phân loại: Màu Trắng Ngọc Trai', 'Phân loại: Bản Cao Cấp 2026'],
+      templates: {
+        POS: [
+          { text: 'Thiết bị hoạt động siêu êm ái, hoàn thiện tỉ mỉ sang trọng. Vệ sinh lau chùi cực kỳ dễ dàng!', aspects: [{ aspect: 'Usability_Experience', label: 'Dễ dàng vệ sinh', sentiment: 'POS' }, { aspect: 'Appearance_Design', label: 'Thiết kế sang trọng', sentiment: 'POS' }] },
+          { text: 'Công suất mạnh mẽ chiên nướng / lọc bụi / hút bụi cực kỳ sạch sẽ. Đáng tiền cực kỳ luôn nha!', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu suất cao', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Máy chạy tiếng kêu vừa phải ở nấc tối đa, chất lượng dùng ổn định.', aspects: [{ aspect: 'Performance_Functionality', label: 'Độ ồn máy', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Máy mới dùng 2 đợt thì bị khét chập điện tự tắt nguồn. Liên hệ bảo hành quá chậm.', aspects: [{ aspect: 'Product_Defect', label: 'Chập điện nóng máy', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 16. Hạt / Ngũ cốc / Trà / Thực phẩm
+  if (name.includes('hạt') || name.includes('ngũ cốc') || name.includes('granola') || name.includes('trà') || name.includes('yến mạch')) {
+    return {
+      variants: ['Phân loại: Hũ 500g Sấy Mộc', 'Phân loại: Túi Zip 1kg Ngũ Cốc', 'Phân loại: Hộp Trà 200g'],
+      templates: {
+        POS: [
+          { text: 'Sản phẩm giòn rụm thơm béo không bị hôi dầu. Đóng hũ nhựa PET seal kim loại chống ẩm tốt!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Độ giòn thơm', sentiment: 'POS' }, { aspect: 'External_Packaging', label: 'Hũ seal chống ẩm', sentiment: 'POS' }] },
+          { text: 'Trà / Hạt thơm mát thanh lọc cơ thể giúp thư giãn ngủ ngon. Giao hàng hỏa tốc quá ưng!', aspects: [{ aspect: 'Performance_Functionality', label: 'Hương vị & Tác dụng', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Thực phẩm ngon nhưng cần bảo quản kỹ chống ẻo sau khi mở seal.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Bảo quản chống ẩm', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Hạt bị hôi dầu đắng mốc không thể ăn được. Đề nghị shop đổi trả hũ mới!', aspects: [{ aspect: 'Product_Defect', label: 'Hôi dầu hỏng mốc', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 17. Quần / Áo / Váy / Giày (General apparel)
+  if (name.includes('áo') || name.includes('quần') || name.includes('váy') || name.includes('đầm') || name.includes('giày') || name.includes('dép') || cat.includes('thời trang') || cat.includes('giày')) {
+    return {
+      variants: ['Phân loại: Size M - Màu Đen', 'Phân loại: Size L - Màu Trắng', 'Phân loại: Size XL - Màu Xanh'],
+      templates: {
+        POS: [
+          { text: 'Chất vải / chất liệu mềm mát, đường may chắc chắn tỉ mỉ không có chỉ thừa. Form dáng tôn suông che khuyết điểm rất tốt!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu cao cấp', sentiment: 'POS' }, { aspect: 'Appearance_Design', label: 'Form dáng thiết kế', sentiment: 'POS' }] },
+          { text: 'Mang lên siêu êm thoải mái không bị đau gót hay cọ xát. Đóng gói túi zip chỉn chu.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm êm ái', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Chất liệu mỏng hơn hình quảng cáo một chút, mặc mùa hè thì thoáng mát.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Độ mỏng mát', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Giao sai phân loại màu rồi shop ơi! Đặt màu đen mà giao màu xám. Đề nghị shop đổi sản phẩm mới.', aspects: [{ aspect: 'Fulfillment_Accuracy', label: 'Giao sai phân loại', sentiment: 'NEG' }] },
+          { text: 'Vải mỏng xù lông giặt 1 nước đã nhăn bèo nhèo. Thất vọng so with giá tiền.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất lượng vải xù', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  // 18. Mỹ phẩm / Serum / Son / Skincare (General beauty)
+  if (name.includes('skincare') || name.includes('son') || name.includes('serum') || name.includes('dưỡng') || cat.includes('mỹ phẩm') || cat.includes('làm đẹp')) {
+    return {
+      variants: ['Phân loại: Bản 50ml Phục Hồi', 'Phân loại: Tuýp 100g Kiềm Dầu', 'Phân loại: Hộp Dưỡng Ẩm'],
+      templates: {
+        POS: [
+          { text: 'Dùng mượt da ẩm mịn thấy rõ, không bị kích ứng mẩn đỏ. Chất serum/kem thấm cực nhanh!', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu quả dưỡng da', sentiment: 'POS' }] },
+          { text: 'Hàng chính hãng tem mác tiếng Việt chống giả đầy đủ. Đóng gói bọc xốp kỹ lưỡng.', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Chính hãng tem mác', sentiment: 'POS' }] },
+        ],
+        NEU: [
+          { text: 'Chất kem hơi đặc nên cần tán nhanh tay, kiềm dầu được 4 tiếng. Giá hợp lý.', aspects: [{ aspect: 'Usability_Experience', label: 'Chất kem & Độ kiềm dầu', sentiment: 'NEU' }] },
+        ],
+        NEG: [
+          { text: 'Da bôi vào bị châm chích mẩn đỏ. Vòi pump xịt bị nghẽn ấn không ra sản phẩm.', aspects: [{ aspect: 'Product_Defect', label: 'Dị ứng & Vòi nghẽn', sentiment: 'NEG' }] },
+        ]
+      }
+    };
+  }
+
+  return null;
+}
+
+const DOMAIN_TEMPLATES = {
+  home: {
+    POS: [
+      { text: 'Sản phẩm gia dụng thiết kế tối giản đẹp mắt, hoàn thiện tỉ mỉ sang trọng. Đóng gói bọc xốp cẩn thận.', aspects: [{ aspect: 'Appearance_Design', label: 'Thiết kế đẹp', sentiment: 'POS' }, { aspect: 'External_Packaging', label: 'Đóng gói bọc xốp', sentiment: 'POS' }] },
+      { text: 'Gia dụng hoạt động siêu êm ái, vệ sinh chùi rửa rất dễ dàng. Đáng tiền cực kỳ luôn!', aspects: [{ aspect: 'Usability_Experience', label: 'Dễ vệ sinh', sentiment: 'POS' }, { aspect: 'Price_Performance_Ratio', label: 'Đáng tiền', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Sản phẩm dùng khá ổn trong tầm giá, hoàn thiện trung bình.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng vừa đủ', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Đóng gói sơ sài làm vỏ móp méo. Nhắn phản hồi CSKH thì trả lời chậm.', aspects: [{ aspect: 'External_Packaging', label: 'Móp vỏ hộp', sentiment: 'NEG' }] },
+    ]
+  },
+  baby: {
+    POS: [
+      { text: 'Sản phẩm mẹ và bé chất liệu an toàn mềm mại, date xa. Đóng gói chắc chắn!', aspects: [{ aspect: 'Material_BuildQuality', label: 'An toàn da bé', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Kích thước hơi nhỏ một chút so với hình mô tả.', aspects: [{ aspect: 'Usability_Experience', label: 'Kích cỡ', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Vỏ hộp bị dằn xóc móp nắp khi nhận hàng.', aspects: [{ aspect: 'External_Packaging', label: 'Giao hàng méo móp', sentiment: 'NEG' }] },
+    ]
+  },
+  tech: {
+    POS: [
+      { text: 'Hàng nguyên seal mới 100%, kết nối nhanh mượt không độ trễ!', aspects: [{ aspect: 'Authenticity_Packaging', label: 'Chính hãng nguyên seal', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Dùng ổn định trong tầm giá này.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng vừa đủ', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Mới dùng được vài ngày thì bị lỗi chập chờn.', aspects: [{ aspect: 'Product_Defect', label: 'Lỗi thiết bị', sentiment: 'NEG' }] },
+    ]
+  },
+  clothing: {
+    POS: [
+      { text: 'Chất vải mướt mát, đường may chắc chắn tỉ mỉ. Form chuẩn đẹp!', aspects: [{ aspect: 'Material_BuildQuality', label: 'Chất liệu vải', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Chất vải mỏng mát hợp mặc mùa hè.', aspects: [{ aspect: 'Material_BuildQuality', label: 'Độ dày vải', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Giao sai màu sắc phân loại.', aspects: [{ aspect: 'Fulfillment_Accuracy', label: 'Giao sai hàng', sentiment: 'NEG' }] },
+    ]
+  },
+  beauty: {
+    POS: [
+      { text: 'Mỹ phẩm thơm nhẹ mượt da, hàng chính hãng tem mác đầy đủ.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu quả sử dụng', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Dùng vừa phải kiềm dầu 3-4 tiếng.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Da bôi vào bị châm chích mẩn đỏ nhẹ.', aspects: [{ aspect: 'Product_Defect', label: 'Kích ứng', sentiment: 'NEG' }] },
+    ]
+  },
+  general: {
+    POS: [
+      { text: 'Sản phẩm dùng rất ổn định, hoàn thiện cao cấp đúng mô tả.', aspects: [{ aspect: 'Usability_Experience', label: 'Trải nghiệm tốt', sentiment: 'POS' }] },
+    ],
+    NEU: [
+      { text: 'Hàng tạm ổn trong tầm giá.', aspects: [{ aspect: 'Performance_Functionality', label: 'Hiệu năng', sentiment: 'NEU' }] },
+    ],
+    NEG: [
+      { text: 'Đóng gói móp méo.', aspects: [{ aspect: 'External_Packaging', label: 'Đóng gói kém', sentiment: 'NEG' }] },
+    ]
+  }
+};
+
+const DOMAIN_VARIANTS = {
+  home: ['Phân loại: Bản Tiêu Chuẩn', 'Phân loại: Bản Cao Cấp', 'Phân loại: Màu Bạc Ánh Kim'],
+  baby: ['Phân loại: Size Tiêu Chuẩn', 'Phân loại: Combo Tiết Kiệm'],
+  tech: ['Phân loại: Bản Tiêu Chuẩn', 'Phân loại: Phiên Bản Pro'],
+  clothing: ['Màu Sắc: Đen, Size: M', 'Màu Sắc: Trắng, Size: L'],
+  beauty: ['Phân loại: Bản 50ml', 'Phân loại: Phiên Bản Mới'],
+  general: ['Phân loại: Mặc định', 'Phân loại: Combo']
+};
+
+const COMMENT_PREFIXES = [
+  "",
+  "Giao hàng siêu nhanh! ",
+  "Đã nhận được hàng nhé shop! ",
+  "Sản phẩm rất tuyệt vời, ",
+  "Ấn tượng đầu tiên là ",
+  "Sau vài ngày sử dụng thì thấy ",
+  "Mua đợt săn sale giá hời, ",
+  "Shop đóng gói cẩn thận 3 lớp, ",
+  "Mới bóc hộp ra thử liền, ",
+  "Thật sự rất hài lòng luôn nha, ",
+  "Chuẩn chính hãng 100%, ",
+  "Đã ủng hộ shop lần thứ 2, ",
+  "Cho shop 5 sao nè, ",
+  "Chất lượng vượt xa mong đợi, "
+];
+
+// Product review comments generator (generates 50 realistic product-tailored comments per product)
+export function generateMockComments(product, count = 50) {
+  const exactData = getExactItemData(product);
+
+  let templates;
+  let variants;
+
+  if (exactData) {
+    templates = exactData.templates;
+    variants = exactData.variants;
+  } else {
+    const domain = getProductDomain(product);
+    templates = DOMAIN_TEMPLATES[domain] || DOMAIN_TEMPLATES.general;
+    variants = DOMAIN_VARIANTS[domain] || DOMAIN_VARIANTS.general;
+  }
 
   const comments = [];
-  const variants = [
-    'Màu Sắc: Đen, Kích thước: Size L',
-    'Màu Sắc: Trắng Tinh Khôi, Kích thước: Size M',
-    'Màu Sắc: Be Sữa, Kích thước: Size S',
-    'Màu Sắc: Xanh Pastel, Kích thước: Size XL',
-    'Phân loại: Bản Tiêu Chuẩn 50ml',
-    'Phân loại: Combo Tiết Kiệm Kèm Quà Tặng',
-    'Phân loại: Bản Cao Cấp Màu Xám Không Gian',
-    'Phân loại: Màu Bạc Ánh Kim, 128GB',
-  ];
 
   // Target sentiment distribution based on product rating
   const targetPosCount = Math.round(count * (product.rating >= 4.8 ? 0.76 : product.rating >= 4.6 ? 0.70 : 0.60));
@@ -557,7 +1021,7 @@ export function generateMockComments(product, count = 75) {
 
   for (let i = 0; i < count; i++) {
     const sentiment = sentimentPool[i] || 'POS';
-    const pool = domainTemplates[sentiment];
+    const pool = templates[sentiment] || templates.POS;
     const template = pool[i % pool.length];
 
     const starRating = sentiment === 'POS' ? ((i % 4 === 0) ? 4 : 5)
@@ -569,6 +1033,7 @@ export function generateMockComments(product, count = 75) {
 
     const userName = VIETNAMESE_NAMES[i % VIETNAMESE_NAMES.length];
     const variant = variants[i % variants.length];
+    const prefix = COMMENT_PREFIXES[i % COMMENT_PREFIXES.length];
 
     comments.push({
       id: `cmt-${product.id}-${String(i + 1).padStart(3, '0')}`,
@@ -580,7 +1045,7 @@ export function generateMockComments(product, count = 75) {
       sentiment, // 'POS' | 'NEU' | 'NEG'
       date: commentDate.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
       variant,
-      content: template.text,
+      content: prefix + template.text,
       aspects: template.aspects,
       helpfulVotes: (i * 7) % 29,
     });

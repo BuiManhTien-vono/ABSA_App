@@ -14,6 +14,7 @@ using HigenAbsa.Application.DTOs.Inference;
 using ProductEntity = HigenAbsa.Domain.Entities.Product;
 using CustomerEntity = HigenAbsa.Domain.Entities.Customer;
 using ReviewEntity = HigenAbsa.Domain.Entities.Review;
+using TicketEntity = HigenAbsa.Domain.Entities.Ticket;
 
 namespace HigenAbsa.Infrastructure.Services.Inference;
 
@@ -298,6 +299,19 @@ public class ExcelAnalysisService(
                         AspectScore = aspect.AspectScore,
                         SentimentScore = aspect.SentimentScore,
                         EvidenceText = item.CommentText
+                    });
+                }
+
+                if (sentimentLabel == "NEG" || item.Rating <= 2)
+                {
+                    db.Tickets.Add(new TicketEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        ReviewId = review.Id,
+                        CustomerId = customer.Id,
+                        Priority = item.Rating == 1 ? "URGENT" : (item.Rating == 2 ? "HIGH" : "MEDIUM"),
+                        Status = "OPEN",
+                        CreatedAt = DateTime.UtcNow
                     });
                 }
             }
