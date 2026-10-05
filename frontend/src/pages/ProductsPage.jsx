@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Package, Store, ChevronRight, ShoppingBag, BarChart3 } from 'lucide-react';
-import { SHOPEE_STORES, STORE_CATEGORIES } from '../data/shopeeData';
-import { LAZADA_STORES, LAZADA_STORE_CATEGORIES } from '../data/lazadaData';
-import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES } from '../data/tiktokShopData';
+import { SHOPEE_STORES, STORE_CATEGORIES, getProductsForCategory } from '../data/shopeeData';
+import { LAZADA_STORES, LAZADA_STORE_CATEGORIES, getLazadaProductsForCategory } from '../data/lazadaData';
+import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES, getTikTokShopProductsForCategory } from '../data/tiktokShopData';
 
 // Helper: read connected platforms from localStorage
 function getConnectedPlatforms() {
@@ -21,6 +21,7 @@ const PLATFORM_INFO = {
     gradient: 'linear-gradient(135deg, #ee4d2d, #ff6633)',
     getStores: () => SHOPEE_STORES,
     getCategories: () => STORE_CATEGORIES,
+    getProducts: (storeId, categoryId) => getProductsForCategory(storeId, categoryId, { includeComments: false }),
   },
   lazada: {
     name: 'Lazada Việt Nam',
@@ -29,6 +30,7 @@ const PLATFORM_INFO = {
     gradient: 'linear-gradient(135deg, #0f146d, #2b31a6)',
     getStores: () => LAZADA_STORES,
     getCategories: () => LAZADA_STORE_CATEGORIES,
+    getProducts: getLazadaProductsForCategory,
   },
   'tiktok-shop': {
     name: 'TikTok Shop Việt Nam',
@@ -37,6 +39,7 @@ const PLATFORM_INFO = {
     gradient: 'linear-gradient(135deg, #111827, #374151)',
     getStores: () => TIKTOK_SHOP_STORES,
     getCategories: () => TIKTOK_SHOP_STORE_CATEGORIES,
+    getProducts: getTikTokShopProductsForCategory,
   },
 };
 
@@ -59,7 +62,13 @@ export default function ProductsPage() {
         const totalCategories = connectedStores.reduce(
           (sum, s) => sum + (categories[s.id]?.length || 0), 0
         );
-        const totalReviews = connectedStores.reduce((sum, s) => sum + (s.reviewCount || 0), 0);
+        const totalReviews = connectedStores.reduce((sum, s) => {
+          const cats = categories[s.id] || [];
+          return sum + cats.reduce((catSum, cat) => {
+            const prods = info.getProducts(s.id, cat.id);
+            return catSum + prods.reduce((pSum, p) => pSum + (p.reviewCount || 0), 0);
+          }, 0);
+        }, 0);
         const avgRating = connectedStores.length > 0
           ? (connectedStores.reduce((sum, s) => sum + (s.rating || 0), 0) / connectedStores.length).toFixed(1)
           : '0.0';
@@ -76,6 +85,43 @@ export default function ProductsPage() {
         };
       })
       .filter(Boolean);
+
+    if (list.length === 0) {
+      // Demo Fallback
+      list = [
+        {
+          code: 'shopee',
+          ...PLATFORM_INFO.shopee,
+          connectedAt: new Date().toISOString(),
+          storeCount: 3,
+          totalCategories: 3 * STORE_CATEGORIES['spe-01']?.length || 15,
+          totalReviews: SHOPEE_STORES.slice(0, 3).reduce((sum, s) => sum + s.reviewCount, 0),
+          avgRating: '4.8',
+          stores: SHOPEE_STORES.slice(0, 3),
+        },
+        {
+          code: 'lazada',
+          ...PLATFORM_INFO.lazada,
+          connectedAt: new Date().toISOString(),
+          storeCount: 3,
+          totalCategories: 3 * LAZADA_STORE_CATEGORIES['lzd-01']?.length || 15,
+          totalReviews: LAZADA_STORES.slice(0, 3).reduce((sum, s) => sum + (s.reviewCount || 450), 0),
+          avgRating: '4.7',
+          stores: LAZADA_STORES.slice(0, 3),
+        },
+        {
+          code: 'tiktok-shop',
+          ...PLATFORM_INFO['tiktok-shop'],
+          connectedAt: new Date().toISOString(),
+          storeCount: 2,
+          totalCategories: 2 * TIKTOK_SHOP_STORE_CATEGORIES['tts-01']?.length || 10,
+          totalReviews: TIKTOK_SHOP_STORES.slice(0, 2).reduce((sum, s) => sum + s.reviewCount, 0),
+          avgRating: '4.9',
+          stores: TIKTOK_SHOP_STORES.slice(0, 2),
+        },
+      ];
+    }
+    return list;
   }, [connectedPlatforms]);
 
   const totalStores = connectedList.reduce((s, p) => s + p.storeCount, 0);

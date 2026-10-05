@@ -343,6 +343,18 @@ export default function ConnectPage() {
     return Array.isArray(conn.stores) ? conn.stores.length : 0;
   }
 
+  function normalizePlatformCode(code) {
+    return String(code || '').toLowerCase().replace(/_/g, '-');
+  }
+
+  function getApiConnectedStoreCount(platformCode) {
+    const normalizedCode = normalizePlatformCode(platformCode);
+    return stores.filter((store) => (
+      normalizePlatformCode(store.platformCode) === normalizedCode &&
+      String(store.status || '').toUpperCase() === 'CONNECTED'
+    )).length;
+  }
+
   // Available mock stores for modal step 2
   const availableStores = useMemo(() => {
     if (!selectedPlatform) return [];
@@ -474,7 +486,8 @@ export default function ConnectPage() {
         {PLATFORM_DEFS.map((pDef) => {
           const conn = connectedPlatforms[pDef.code];
           const isConnected = conn?.connected;
-          const storeCount = getConnectedStoreCount(pDef.code);
+          const manualStoreCount = getConnectedStoreCount(pDef.code);
+          const apiStoreCount = getApiConnectedStoreCount(pDef.code);
 
           return (
             <div
@@ -552,7 +565,7 @@ export default function ConnectPage() {
                 {isConnected ? (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '22px', fontWeight: 700, color: pDef.color }}>{storeCount}</div>
+                      <div style={{ fontSize: '22px', fontWeight: 700, color: pDef.color }}>{manualStoreCount}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>cửa hàng liên kết</div>
                     </div>
                     <button
@@ -572,6 +585,14 @@ export default function ConnectPage() {
                     {pDef.description}
                   </p>
                 )}
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#64748b' }}>Kết nối qua API</span>
+                    <span style={{ color: apiStoreCount > 0 ? '#15803d' : '#64748b', fontWeight: 600 }}>
+                      {apiStoreCount > 0 ? `Đã kết nối · ${apiStoreCount} shop` : 'Chưa kết nối'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -610,7 +631,11 @@ export default function ConnectPage() {
             return !name.includes('shopee') && !name.includes('lazada');
           })
           .map((p) => {
-            const connectedCount = stores.filter((s) => s.platformCode === p.code && s.status === 'CONNECTED').length;
+            const apiConnectedCount = stores.filter((s) => (
+              normalizePlatformCode(s.platformCode) === normalizePlatformCode(p.code) &&
+              String(s.status || '').toUpperCase() === 'CONNECTED'
+            )).length;
+            const manualConnection = connectedPlatforms[normalizePlatformCode(p.code)];
             return (
               <div key={p.id} style={{
                 background: '#fff', padding: '20px', borderRadius: '12px', flex: '0 0 280px',
@@ -632,9 +657,20 @@ export default function ConnectPage() {
                     </span>
                   </div>
                 </div>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '12px', marginBottom: 0 }}>
-                  {connectedCount > 0 ? `Đã kết nối ${connectedCount} shop` : 'Chưa có kết nối nào'}
-                </p>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '12px', display: 'grid', gap: '5px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kết nối thủ công</span>
+                    <strong style={{ color: manualConnection?.connected ? '#15803d' : '#64748b' }}>
+                      {manualConnection?.connected ? 'Đã kết nối' : 'Chưa kết nối'}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kết nối qua API</span>
+                    <strong style={{ color: apiConnectedCount > 0 ? '#15803d' : '#64748b' }}>
+                      {apiConnectedCount > 0 ? `Đã kết nối ${apiConnectedCount} shop` : 'Chưa kết nối'}
+                    </strong>
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -642,7 +678,11 @@ export default function ConnectPage() {
 
       {/* Backend Stores Table */}
       <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '12px' }}>Cửa hàng đã kết nối qua API</h2>
-      <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{
+        background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0',
+        maxHeight: '460px', overflowY: 'auto', overflowX: 'auto',
+        scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent',
+      }}>
         {loading ? (
           <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>Đang tải...</div>
         ) : stores.length === 0 ? (

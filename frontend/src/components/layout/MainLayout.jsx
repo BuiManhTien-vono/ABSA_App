@@ -37,7 +37,7 @@ export default function MainLayout() {
       <Sidebar />
       <div className="content-wrapper">
         <TopBar title={title} />
-        <main className="page-content">
+        <main className={`page-content ${location.pathname === '/reviews' ? 'page-content--reviews' : ''} ${location.pathname === '/overview' ? 'page-content--overview' : ''}`}>
           <Outlet />
         </main>
       </div>

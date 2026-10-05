@@ -10,6 +10,7 @@ import storeService from '../services/storeService';
 import { SHOPEE_STORES, STORE_CATEGORIES, getProductsForCategory, generateMockComments } from '../data/shopeeData';
 import { LAZADA_STORES, LAZADA_STORE_CATEGORIES, getLazadaProductsForCategory, generateLazadaMockComments } from '../data/lazadaData';
 import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES, getTikTokShopProductsForCategory, generateTikTokShopMockComments } from '../data/tiktokShopData';
+import { DEFAULT_MOCK_TEMPLATES } from './TemplatesPage';
 import './ReviewFeedPage.css';
 
 const SENTIMENT_MAP = {
@@ -40,14 +41,14 @@ function getMockReviewsForStore(storeId) {
   const store = LAZADA_STORES.find(s => s.id === storeId) || SHOPEE_STORES.find(s => s.id === storeId) || TIKTOK_SHOP_STORES.find(s => s.id === storeId);
   const storeName = store ? store.name : 'Cửa hàng';
 
-  // 1. If Lazada store: generate 50 rich comments per product
+  // 1. If Lazada store: generate rich comments per product
   if (LAZADA_STORE_CATEGORIES[storeId]) {
     const categories = LAZADA_STORE_CATEGORIES[storeId] || [];
     const reviews = [];
     categories.forEach(cat => {
       const prods = getLazadaProductsForCategory(storeId, cat.id);
       prods.forEach(prod => {
-        const comments = generateLazadaMockComments(prod, 50);
+        const comments = generateLazadaMockComments(prod, prod.reviewCount || 50);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -81,14 +82,14 @@ function getMockReviewsForStore(storeId) {
     return reviews;
   }
 
-  // 2. If TikTok Shop store: generate 50 rich TikTok-style comments per product
+  // 2. If TikTok Shop store: generate rich TikTok-style comments per product
   if (TIKTOK_SHOP_STORE_CATEGORIES[storeId]) {
     const categories = TIKTOK_SHOP_STORE_CATEGORIES[storeId] || [];
     const reviews = [];
     categories.forEach(cat => {
       const prods = getTikTokShopProductsForCategory(storeId, cat.id);
       prods.forEach(prod => {
-        const comments = generateTikTokShopMockComments(prod, 50);
+        const comments = generateTikTokShopMockComments(prod, prod.reviewCount || 50);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -122,14 +123,14 @@ function getMockReviewsForStore(storeId) {
     return reviews;
   }
 
-  // 3. If Shopee store: generate 50 rich Shopee-style comments per product
+  // 3. If Shopee store: generate rich Shopee-style comments per product
   if (STORE_CATEGORIES[storeId]) {
     const categories = STORE_CATEGORIES[storeId] || [];
     const reviews = [];
     categories.forEach(cat => {
       const prods = getProductsForCategory(storeId, cat.id, { includeComments: false });
       prods.forEach(prod => {
-        const comments = generateMockComments(prod, 50);
+        const comments = generateMockComments(prod, prod.reviewCount || 50);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -163,9 +164,9 @@ function getMockReviewsForStore(storeId) {
     return reviews;
   }
 
-  // 4. Fallback generator: creates 50 domain-accurate comments for any custom or non-standard mock store
+  // 4. Fallback generator: creates domain-accurate comments for any custom or non-standard mock store
   const fallbackProduct = { id: `prod-${storeId}`, name: storeName, categoryName: store ? store.category : 'Tổng hợp' };
-  const mockComments = generateMockComments(fallbackProduct, 50);
+  const mockComments = generateMockComments(fallbackProduct, store?.reviewCount || 50);
   return mockComments.map((c, i) => ({
     id: `mock-rev-${storeId}-${i + 1}`,
     platformReviewId: `REV_${storeId}_${i + 1}`,
@@ -202,6 +203,7 @@ export default function ReviewFeedPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [sendingResponse, setSendingResponse] = useState(false);
+  const [responseTemplates, setResponseTemplates] = useState([]);
 
   // Stores list for multi-shop filtering
   const [storesList, setStoresList] = useState([]);
@@ -219,11 +221,21 @@ export default function ReviewFeedPage() {
 
   useEffect(() => {
     loadStores();
+    loadTemplates();
   }, []);
+
+  async function loadTemplates() {
+    try {
+      const res = await responseService.getTemplates({ pageSize: 50 }).catch(() => null);
+      setResponseTemplates(res?.items?.length > 0 ? res.items : DEFAULT_MOCK_TEMPLATES);
+    } catch (err) {
+      setResponseTemplates(DEFAULT_MOCK_TEMPLATES);
+    }
+  }
 
   useEffect(() => {
     loadReviews();
-  }, [storeId, rating, sentiment, status, search]);
+  }, [storeId, rating, sentiment, status, search, storesList]);
 
   async function loadStores() {
     try {
@@ -281,6 +293,13 @@ export default function ReviewFeedPage() {
         console.error(e);
       }
 
+      // Fallback if none connected explicitly (for demo)
+      if (connectedList.length === 0) {
+        SHOPEE_STORES.slice(0, 3).forEach(s => connectedList.push({ id: s.id, storeName: s.name, platformName: 'Shopee', isMock: true }));
+        LAZADA_STORES.slice(0, 3).forEach(s => connectedList.push({ id: s.id, storeName: s.name, platformName: 'Lazada', isMock: true }));
+        TIKTOK_SHOP_STORES.slice(0, 2).forEach(s => connectedList.push({ id: s.id, storeName: s.name, platformName: 'TikTok Shop', isMock: true }));
+      }
+
       setStoresList(connectedList);
     } catch (err) {
       console.error('Lỗi khi tải danh sách cửa hàng:', err);
@@ -324,8 +343,8 @@ export default function ReviewFeedPage() {
 
       let items = res?.items || [];
 
-      // If All Stores is selected and DB is empty, combine mock reviews STRICTLY for connected stores
-      if (items.length === 0 && !storeId) {
+      // If All Stores is selected, combine DB reviews and mock reviews strictly for connected stores
+      if (!storeId) {
         let aggregated = [];
         const connectedMockStores = storesList.filter(s => s.isMock);
         // Only load reviews from stores that the user has actually connected!
@@ -345,7 +364,7 @@ export default function ReviewFeedPage() {
           );
         }
 
-        items = aggregated;
+        items = [...items, ...aggregated];
       }
 
       setAllReviews(items);
@@ -378,7 +397,27 @@ export default function ReviewFeedPage() {
       const detail = await reviewService.getReviewById(id).catch(() => null);
       const finalDetail = detail || target;
       setSelectedReview(finalDetail);
-      setResponseText(finalDetail?.aiAnalysis?.suggestedSellerResponse || '');
+
+      let autoResponse = finalDetail?.aiAnalysis?.suggestedSellerResponse || '';
+
+      if (responseTemplates.length > 0) {
+        let matchedTpl = responseTemplates.find(t =>
+          (t.targetRating == null || t.targetRating === finalDetail.rating) &&
+          (t.targetSentiment == null || t.targetSentiment === finalDetail.overallSentiment)
+        );
+
+        if (!matchedTpl) matchedTpl = responseTemplates.find(t => t.targetRating === finalDetail.rating);
+        if (!matchedTpl) matchedTpl = responseTemplates.find(t => t.targetSentiment === finalDetail.overallSentiment);
+
+        if (matchedTpl && matchedTpl.contentTemplate) {
+          autoResponse = matchedTpl.contentTemplate
+            .replace(/\{customer_name\}/g, getCustomerName(finalDetail))
+            .replace(/\{product_name\}/g, finalDetail.productName || 'sản phẩm')
+            .replace(/\{store_name\}/g, getStoreName(finalDetail));
+        }
+      }
+
+      setResponseText(autoResponse);
     } catch (err) {
       if (target) {
         setSelectedReview(target);
@@ -634,6 +673,23 @@ export default function ReviewFeedPage() {
 
                   <StarRating rating={r.rating} />
                   <p className="review-card__text">{r.commentText}</p>
+
+                  {/* Aspect Chips - ABSA analysis visible on card */}
+                  {r.aspects?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, marginBottom: 4 }}>
+                      {r.aspects.slice(0, 4).map((a, idx) => {
+                        const cls = a.sentiment === 'POS' ? 'aspect-chip--pos' : a.sentiment === 'NEG' ? 'aspect-chip--neg' : 'aspect-chip--neu';
+                        return (
+                          <span key={idx} className={`aspect-chip ${cls}`} style={{ fontSize: 10, padding: '2px 6px' }}>
+                            {a.microAspect}: <strong>{a.sentiment}</strong>
+                          </span>
+                        );
+                      })}
+                      {r.aspects.length > 4 && (
+                        <span style={{ fontSize: 10, color: 'var(--surface-400)', alignSelf: 'center' }}>+{r.aspects.length - 4}</span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="review-card__footer">
                     <span className="review-card__product">Sản phẩm: {r.productName || 'N/A'}</span>

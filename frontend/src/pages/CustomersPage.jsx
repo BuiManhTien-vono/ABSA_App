@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Users, Search, ShieldAlert, Crown, UserCheck, X, Sparkles, AlertTriangle, Eye, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Users, Store, Search, ShieldAlert, Crown, UserCheck, X, Sparkles, AlertTriangle, Eye, MessageSquare } from 'lucide-react';
 import customerService from '../services/customerService';
 import './CustomersPage.css';
 
@@ -9,27 +9,9 @@ const RISK_BADGE = {
   VIP: 'badge--pos',
 };
 
-const CUSTOMER_SEEDS = [
-  { name: 'Nguyễn Thu Hà', risk: 'POTENTIAL_BOMMER', rating: 1.8, pos: 2, neu: 2, neg: 14, reason: '14/18 đánh giá 1-2★ (78% Tiêu cực). Từng spam 4 bình luận đòi bồi thường trong 24h.', rec: 'Cần liên hệ hỗ trợ xác minh kỹ đơn hàng trước khi giải quyết bồi hoàn. Hạn chế tặng Voucher tự động.', reviewText: 'Pin dùng được 1 tiếng là sụt tắt nguồn! Đề nghị shop cho đổi trả gấp.' },
-  { name: 'Lê Mai Anh', risk: 'VIP', rating: 5.0, pos: 12, neu: 0, neg: 0, reason: '100% đánh giá 5★ (12 đơn hàng). Đóng góp nhiều bình luận khen ngợi chi tiết.', rec: 'Khách hàng thân thiết VIP. Đề xuất tự động gửi tặng Voucher giảm giá 15% định kỳ.', reviewText: 'Vải mát, mịn, giặt không xù. Đóng gói rất cẩn thận 2 lớp chống sốc.' },
-  { name: 'Trần Tuấn Kiệt', risk: 'VIP', rating: 4.9, pos: 14, neu: 1, neg: 0, reason: '14/15 đánh giá 5★. Thường xuyên quay video review chi tiết sản phẩm.', rec: 'Khách hàng VIP tiềm năng làm KOC review. Nên duy trì chăm sóc ưu tiên.', reviewText: 'Hàng chuẩn chính hãng, đóng gói bọc xốp đẹp chill. 10 điểm cho shop!' },
-  { name: 'Đặng Minh Quân', risk: 'POTENTIAL_BOMMER', rating: 1.5, pos: 1, neu: 1, neg: 7, reason: '7/9 đánh giá 1-2★. Tỷ lệ khiếu nại giao sai màu/thiếu quà cao bất thường.', rec: 'Chụp ảnh đóng gói cẩn thận trước khi bàn giao Shipper cho khách hàng này.', reviewText: 'Giao nhầm hàng rồi shop ơi. Gọi tổng đài máy bận liên tục.' },
-  { name: 'Phạm Quốc Bảo', risk: 'NORMAL', rating: 4.6, pos: 6, neu: 2, neg: 0, reason: 'Đánh giá tự nhiên, tỷ lệ khen/chê hợp lý, không có dấu hiệu bất thường.', rec: 'Tài khoản bình thường. Tiếp tục chăm sóc theo quy trình tiêu chuẩn.', reviewText: 'Dùng rất ổn trong tầm giá, giao hàng nhanh 2 ngày đã nhận được.' },
-  { name: 'Bùi Việt Hùng', risk: 'POTENTIAL_BOMMER', rating: 2.0, pos: 3, neu: 3, neg: 16, reason: '16/22 đánh giá 1-2★. Lịch sử khiếu nại bóp méo bao bì trên 3 gian hàng khác nhau.', rec: 'Hệ thống đánh dấu nguy cơ Review Bomber. Kiểm tra quy trình niêm phong vỏ hộp.', reviewText: 'Vỏ hộp móp méo, tem vỡ. Đề nghị đền bù đổi mới!' },
-  { name: 'Vũ Thùy Linh', risk: 'VIP', rating: 5.0, pos: 14, neu: 0, neg: 0, reason: '14/14 đánh giá 5★ kèm hình ảnh check-in thực tế.', rec: 'Khách hàng VIP cao cấp. Ưu tiên xử lý đơn và tặng mã ưu đãi đặc biệt.', reviewText: 'Sản phẩm mượt đẹp xinh xỉu. Shop tặng kèm quà dưỡng da rất thích!' },
-  { name: 'Trần Thanh Hương', risk: 'NORMAL', rating: 4.2, pos: 4, neu: 1, neg: 1, reason: 'Đánh giá bình thường, có khen và góp ý xây dựng.', rec: 'Tài khoản tiêu chuẩn.', reviewText: 'Sản phẩm mặc vừa vặn, đóng gói cẩn thận chỉn chu.' },
-  { name: 'Hoàng Trọng Nghĩa', risk: 'POTENTIAL_BOMMER', rating: 1.6, pos: 2, neu: 1, neg: 11, reason: '11/14 đánh giá 1★. Hay yêu cầu hoàn tiền không trả hàng.', rec: 'Yêu cầu quy trình trả hàng đúng quy định sàn trước khi hoàn tiền.', reviewText: 'Hàng hư hỏng không dùng được, shop làm ăn dối trá!' },
-  { name: 'Đỗ Phương Thảo', risk: 'VIP', rating: 4.8, pos: 18, neu: 2, neg: 0, reason: '20 đơn hàng tin tưởng mua sắm liên tục 6 tháng qua.', rec: 'Gửi thiệp cảm ơn và tặng mã quà tặng độc quyền VIP.', reviewText: 'Luôn ủng hộ shop, giao hàng hỏa tốc trong ngày sản phẩm chuẩn 100%.' },
-  { name: 'Nguyễn Văn Hải', risk: 'NORMAL', rating: 4.5, pos: 8, neu: 2, neg: 1, reason: 'Tài khoản mua sắm định kỳ, đánh giá khách quan.', rec: 'Tài khoản bình thường.', reviewText: 'Sản phẩm đúng như mô tả, dùng tốt.' },
-  { name: 'Phạm Kim Ngân', risk: 'VIP', rating: 5.0, pos: 10, neu: 0, neg: 0, reason: '10/10 đánh giá 5★, mua hàng giá trị cao.', rec: 'VIP Member. Gửi ưu đãi giảm 20% đơn tiếp theo.', reviewText: 'Chất lượng tuyệt vời, tư vấn CSKH 100 điểm!' },
-  { name: 'Trịnh Quốc Tuấn', risk: 'POTENTIAL_BOMMER', rating: 1.7, pos: 1, neu: 2, neg: 9, reason: 'Spam bình luận tiêu cực liên tục trong các phiên Livestream.', rec: 'Tự động kiểm tra lịch sử chat và chặn bình luận rác.', reviewText: 'Shop lừa đảo, đặt một đằng giao một nẻo!' },
-  { name: 'Lê Hoàng Yến', risk: 'NORMAL', rating: 4.4, pos: 5, neu: 1, neg: 0, reason: 'Đánh giá tích cực vừa đủ, thái độ vui vẻ.', rec: 'Chăm sóc thông thường.', reviewText: 'Đóng gói chắc chắn, bọc nilon 3 lớp ưng ý.' },
-  { name: 'Đinh Quang Huy', risk: 'VIP', rating: 4.9, pos: 16, neu: 1, neg: 0, reason: '16/17 đơn hàng 5★, mua sắm đa dạng.', rec: 'Tài khoản thân thiết, ưu tiên giao hàng nhanh.', reviewText: 'Đồ dùng rất bền, shop hỗ trợ nhiệt tình.' },
-];
-
-import { LAZADA_STORES } from '../data/lazadaData';
-import { SHOPEE_STORES } from '../data/shopeeData';
-import { TIKTOK_SHOP_STORES } from '../data/tiktokShopData';
+import { LAZADA_STORES, LAZADA_STORE_CATEGORIES, getLazadaProductsForCategory, generateLazadaMockComments } from '../data/lazadaData';
+import { SHOPEE_STORES, STORE_CATEGORIES, getProductsForCategory, generateMockComments } from '../data/shopeeData';
+import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES, getTikTokShopProductsForCategory, generateTikTokShopMockComments } from '../data/tiktokShopData';
 
 function getConnectedStoresList() {
   const stores = [];
@@ -39,7 +21,7 @@ function getConnectedStoresList() {
       const selectedIds = Array.isArray(connections['tiktok-shop']?.stores) ? connections['tiktok-shop'].stores.map(String) : [];
       TIKTOK_SHOP_STORES.forEach(s => {
         if (selectedIds.length === 0 || selectedIds.includes(String(s.id))) {
-          stores.push({ id: s.id, name: s.name, platform: 'TikTok Shop' });
+          stores.push({ id: s.id, name: s.name, platform: 'TikTok Shop', reviewCount: s.reviewCount });
         }
       });
     }
@@ -47,7 +29,7 @@ function getConnectedStoresList() {
       const selectedIds = Array.isArray(connections.shopee?.stores) ? connections.shopee.stores.map(String) : [];
       SHOPEE_STORES.forEach(s => {
         if (selectedIds.length === 0 || selectedIds.includes(String(s.id))) {
-          stores.push({ id: s.id, name: s.name, platform: 'Shopee' });
+          stores.push({ id: s.id, name: s.name, platform: 'Shopee', reviewCount: s.reviewCount });
         }
       });
     }
@@ -55,7 +37,7 @@ function getConnectedStoresList() {
       const selectedIds = Array.isArray(connections.lazada?.stores) ? connections.lazada.stores.map(String) : [];
       LAZADA_STORES.forEach(s => {
         if (selectedIds.length === 0 || selectedIds.includes(String(s.id))) {
-          stores.push({ id: s.id, name: s.name, platform: 'Lazada' });
+          stores.push({ id: s.id, name: s.name, platform: 'Lazada', reviewCount: s.reviewCount || 0 });
         }
       });
     }
@@ -63,119 +45,245 @@ function getConnectedStoresList() {
     console.error(e);
   }
 
-  // Fallback to all mock stores if none explicitly connected
-  if (stores.length === 0) {
-    TIKTOK_SHOP_STORES.forEach(s => stores.push({ id: s.id, name: s.name, platform: 'TikTok Shop' }));
-    SHOPEE_STORES.slice(0, 3).forEach(s => stores.push({ id: s.id, name: s.name, platform: 'Shopee' }));
-    LAZADA_STORES.slice(0, 3).forEach(s => stores.push({ id: s.id, name: s.name, platform: 'Lazada' }));
-  }
-
-  return stores;
+  // An empty list is meaningful: all platform/store connections are off.
+  // Do not show fallback demo stores when the user has no active connection.
+  return stores.filter((store, index, list) => list.findIndex(item => item.id === store.id) === index);
 }
 
-function generateRichCustomerList() {
-  const targetStores = getConnectedStoresList();
+// --- Collect reviews from connected stores (same data source as ReviewFeedPage & PlatformProductDetailPage) ---
+
+function getAllReviewsForStore(storeId, storeName, platform) {
+  const reviews = [];
+
+  // Lazada stores
+  if (LAZADA_STORE_CATEGORIES[storeId]) {
+    const categories = LAZADA_STORE_CATEGORIES[storeId] || [];
+    categories.forEach(cat => {
+      const prods = getLazadaProductsForCategory(storeId, cat.id);
+      prods.forEach(prod => {
+        const comments = generateLazadaMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        comments.forEach(c => {
+          reviews.push({
+            customerName: c.user,
+            productName: prod.name,
+            rating: c.rating,
+            sentiment: c.sentiment,
+            text: c.content,
+            date: c.createdAt,
+            storeName,
+            platform,
+          });
+        });
+      });
+    });
+    return reviews;
+  }
+
+  // TikTok Shop stores
+  if (TIKTOK_SHOP_STORE_CATEGORIES[storeId]) {
+    const categories = TIKTOK_SHOP_STORE_CATEGORIES[storeId] || [];
+    categories.forEach(cat => {
+      const prods = getTikTokShopProductsForCategory(storeId, cat.id);
+      prods.forEach(prod => {
+        const comments = generateTikTokShopMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        comments.forEach(c => {
+          reviews.push({
+            customerName: c.user,
+            productName: prod.name,
+            rating: c.rating,
+            sentiment: c.sentiment,
+            text: c.content,
+            date: c.createdAt,
+            storeName,
+            platform,
+          });
+        });
+      });
+    });
+    return reviews;
+  }
+
+  // Shopee stores
+  if (STORE_CATEGORIES[storeId]) {
+    const categories = STORE_CATEGORIES[storeId] || [];
+    categories.forEach(cat => {
+      const prods = getProductsForCategory(storeId, cat.id, { includeComments: false });
+      prods.forEach(prod => {
+        const comments = generateMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        comments.forEach(c => {
+          reviews.push({
+            customerName: c.userName,
+            productName: prod.name,
+            rating: c.starRating,
+            sentiment: c.sentiment,
+            text: c.content,
+            date: c.date,
+            storeName,
+            platform,
+          });
+        });
+      });
+    });
+    return reviews;
+  }
+
+  return reviews;
+}
+
+function computeRiskLevel(posCount, neuCount, negCount) {
+  const total = posCount + neuCount + negCount;
+  if (total < 2) return 'NORMAL';
+  const negPct = negCount / total;
+  const posPct = posCount / total;
+  if (negPct > 0.6) return 'POTENTIAL_BOMMER';
+  if (posPct > 0.8) return 'VIP';
+  return 'NORMAL';
+}
+
+function generateEvidenceAndRecommendation(riskLevel, posCount, neuCount, negCount) {
+  const total = posCount + neuCount + negCount;
+  const negPct = Math.round((negCount / Math.max(total, 1)) * 100);
+  const posPct = Math.round((posCount / Math.max(total, 1)) * 100);
+
+  if (riskLevel === 'POTENTIAL_BOMMER') {
+    return {
+      evidenceReason: `${negCount}/${total} đánh giá 1-2★ (${negPct}% Tiêu cực). Tỷ lệ đánh giá tiêu cực cao bất thường, cần xem xét kỹ lịch sử mua hàng.`,
+      aiRecommendation: 'Cần liên hệ hỗ trợ xác minh kỹ đơn hàng trước khi giải quyết bồi hoàn. Hạn chế tặng Voucher tự động.',
+    };
+  }
+  if (riskLevel === 'VIP') {
+    return {
+      evidenceReason: `${posCount}/${total} đánh giá 4-5★ (${posPct}% Tích cực). Khách hàng thân thiết với lịch sử mua sắm tốt.`,
+      aiRecommendation: 'Khách hàng thân thiết VIP. Đề xuất tự động gửi tặng Voucher giảm giá 15% định kỳ.',
+    };
+  }
+  return {
+    evidenceReason: `Đánh giá tự nhiên, tỷ lệ khen/chê hợp lý (${posPct}% Tích cực, ${negPct}% Tiêu cực), không có dấu hiệu bất thường.`,
+    aiRecommendation: 'Tài khoản bình thường. Tiếp tục chăm sóc theo quy trình tiêu chuẩn.',
+  };
+}
+
+function generateCustomersForStore(store) {
+  const storeReviews = getAllReviewsForStore(store.id, store.name, store.platform);
+
+  // Profiles are scoped to one store. Employees never receive review
+  // statistics or risk signals from another store.
+  const customerMap = new Map();
+  storeReviews.forEach(review => {
+    const name = review.customerName || 'Khách hàng ẩn danh';
+    const customerKey = `${store.id}::${name}`;
+    if (!customerMap.has(customerKey)) {
+      customerMap.set(customerKey, {
+        customerName: name,
+        reviews: [],
+        storeName: store.name,
+        platform: store.platform,
+      });
+    }
+    customerMap.get(customerKey).reviews.push(review);
+  });
+
   const results = [];
   let idCounter = 1;
 
-  targetStores.forEach((store, storeIdx) => {
-    // Pick 3 unique seeds for each store
-    const seedIndices = [
-      (storeIdx * 3) % CUSTOMER_SEEDS.length,
-      (storeIdx * 3 + 1) % CUSTOMER_SEEDS.length,
-      (storeIdx * 3 + 2) % CUSTOMER_SEEDS.length,
-    ];
+  customerMap.forEach((data) => {
+    const customerName = data.customerName;
+    const reviews = data.reviews;
+    const posCount = reviews.filter(r => r.sentiment === 'POS').length;
+    const neuCount = reviews.filter(r => r.sentiment === 'NEU').length;
+    const negCount = reviews.filter(r => r.sentiment === 'NEG').length;
+    const totalReviews = reviews.length;
+    const avgRating = parseFloat((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / Math.max(totalReviews, 1)).toFixed(1));
 
-    seedIndices.forEach((seedIdx, subIdx) => {
-      const seed = CUSTOMER_SEEDS[seedIdx];
-      const prefix = store.platform === 'TikTok Shop' ? 'TTS' : store.platform === 'Shopee' ? 'SHP' : 'LZD';
-      const userNum = 300000 + (storeIdx * 43 + subIdx * 19 + idCounter * 7) % 690000;
+    const riskLevel = computeRiskLevel(posCount, neuCount, negCount);
+    const { evidenceReason, aiRecommendation } = generateEvidenceAndRecommendation(riskLevel, posCount, neuCount, negCount);
 
-      results.push({
-        id: `cust-${idCounter++}`,
-        displayName: seed.name,
-        platformUserId: `${prefix}_USER_${userNum}`,
-        storeName: store.name,
-        platform: store.platform,
-        totalReviewsCount: seed.pos + seed.neu + seed.neg,
-        riskLevel: seed.risk,
-        posCount: seed.pos,
-        neuCount: seed.neu,
-        negCount: seed.neg,
-        avgRating: seed.rating,
-        evidenceReason: seed.reason,
-        aiRecommendation: seed.rec,
-        recentReviews: [
-          {
-            prod: `Sản phẩm gian hàng ${store.name}`,
-            rating: Math.round(seed.rating),
-            text: seed.reviewText,
-            sentiment: seed.risk === 'POTENTIAL_BOMMER' ? 'NEG' : seed.risk === 'VIP' ? 'POS' : 'NEU',
-            date: `2026-09-${String(15 - (idCounter % 10)).padStart(2, '0')}`
-          }
-        ]
-      });
+    const prefix = data.platform === 'TikTok Shop' ? 'TTS' : data.platform === 'Shopee' ? 'SHP' : 'LZD';
+    const userNum = 300000 + (idCounter * 7 + customerName.length * 43) % 690000;
+
+    // Take up to 5 most recent reviews with REAL product names
+    const recentReviews = reviews.slice(0, 5).map(r => ({
+      prod: r.productName,
+      rating: r.rating,
+      text: r.text,
+      sentiment: r.sentiment,
+      date: typeof r.date === 'string' ? r.date.split('T')[0] : r.date,
+    }));
+
+    results.push({
+      id: `cust-${idCounter++}`,
+      displayName: customerName,
+      platformUserId: `${prefix}_USER_${userNum}`,
+      storeName: data.storeName,
+      platform: data.platform,
+      totalReviewsCount: totalReviews,
+      riskLevel,
+      posCount,
+      neuCount,
+      negCount,
+      avgRating,
+      evidenceReason,
+      aiRecommendation,
+      recentReviews,
     });
+  });
+
+  // Sort: POTENTIAL_BOMMER first, then VIP, then NORMAL (by review count desc within each group)
+  const riskOrder = { POTENTIAL_BOMMER: 0, VIP: 1, NORMAL: 2 };
+  results.sort((a, b) => {
+    const orderDiff = (riskOrder[a.riskLevel] ?? 2) - (riskOrder[b.riskLevel] ?? 2);
+    if (orderDiff !== 0) return orderDiff;
+    return b.totalReviewsCount - a.totalReviewsCount;
   });
 
   return results;
 }
 
+function generateCustomerStoreGroups() {
+  return getConnectedStoresList().map(store => ({
+    store,
+    customers: generateCustomersForStore(store),
+  }));
+}
+
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [storeGroups, setStoreGroups] = useState(() => generateCustomerStoreGroups());
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
+  const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [page, setPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  useEffect(() => {
-    loadCustomers();
-  }, [page, search, riskFilter]);
-
-  async function loadCustomers() {
+  const loadCustomers = useCallback(() => {
     try {
       setLoading(true);
-      const res = await customerService.getCustomers({ page: 1, pageSize: 100, search, riskLevel: riskFilter }).catch(() => null);
-      const dbItems = res?.items || [];
-
-      let items = generateRichCustomerList();
-
-      if (dbItems.length > 0) {
-        dbItems.forEach((c, idx) => {
-          if (idx < items.length) {
-            if (c.displayName && c.displayName !== 'Khách hàng ẩn danh') items[idx].displayName = c.displayName;
-            if (c.platformUserId && c.platformUserId !== 'string') items[idx].platformUserId = c.platformUserId;
-            if (c.storeName && c.storeName !== 'Store') items[idx].storeName = c.storeName;
-            if (c.riskLevel && c.riskLevel !== 'NORMAL') items[idx].riskLevel = c.riskLevel;
-          }
-        });
-      }
-
-      if (riskFilter) items = items.filter(c => c.riskLevel === riskFilter);
-      if (search) {
-        const q = search.toLowerCase();
-        items = items.filter(c => 
-          (c.displayName || '').toLowerCase().includes(q) || 
-          (c.platformUserId || '').toLowerCase().includes(q) ||
-          (c.storeName || '').toLowerCase().includes(q)
-        );
-      }
-
-      setCustomers(items);
+      const nextGroups = generateCustomerStoreGroups();
+      setStoreGroups(nextGroups);
+      setSelectedStoreId(current => current && nextGroups.some(group => group.store.id === current) ? current : null);
     } catch (err) {
       console.error(err);
-      setCustomers(generateRichCustomerList());
+      setStoreGroups([]);
+      setSelectedStoreId(null);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => loadCustomers();
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [loadCustomers]);
 
   async function handleRiskChange(id, newRisk, e) {
     if (e) e.stopPropagation();
     try {
       await customerService.updateRiskLevel(id, newRisk).catch(() => null);
-      setCustomers(prev => prev.map(c => c.id === id ? { ...c, riskLevel: newRisk } : c));
+      const activeStoreId = selectedStoreId || storeGroups[0]?.store.id;
+      setStoreGroups(prev => prev.map(group => group.store.id === activeStoreId
+        ? { ...group, customers: group.customers.map(c => c.id === id ? { ...c, riskLevel: newRisk } : c) }
+        : group));
       if (selectedCustomer?.id === id) {
         setSelectedCustomer(prev => prev ? { ...prev, riskLevel: newRisk } : null);
       }
@@ -184,10 +292,35 @@ export default function CustomersPage() {
     }
   }
 
+  const activeStoreId = selectedStoreId || storeGroups[0]?.store.id || null;
+  const selectedGroup = storeGroups.find(group => group.store.id === activeStoreId) || null;
+  const customers = useMemo(() => {
+    let items = selectedGroup?.customers || [];
+    if (riskFilter) items = items.filter(c => c.riskLevel === riskFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(c =>
+        (c.displayName || '').toLowerCase().includes(q) ||
+        (c.platformUserId || '').toLowerCase().includes(q) ||
+        (c.storeName || '').toLowerCase().includes(q)
+      );
+    }
+    return items;
+  }, [selectedGroup, riskFilter, search]);
+
   const totalCustomers = customers.length;
   const vipCount = customers.filter((c) => c.riskLevel === 'VIP').length;
   const riskCount = customers.filter((c) => c.riskLevel === 'POTENTIAL_BOMMER').length;
   const maxReviews = Math.max(1, ...customers.map((c) => c.totalReviewsCount || 0));
+
+  const PAGE_SIZE = 15;
+  const totalPages = Math.ceil(totalCustomers / PAGE_SIZE) || 1;
+
+  const displayedCustomers = useMemo(() => {
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
+    return customers.slice(start, start + PAGE_SIZE);
+  }, [customers, page, totalPages]);
 
   return (
     <div className="customers-page">
@@ -230,7 +363,7 @@ export default function CustomersPage() {
         <div className="customer-stat-card">
           <div className="customer-stat__icon customer-stat__icon--total"><Users size={20} /></div>
           <div>
-            <div className="customer-stat__value">{totalCustomers}</div>
+            <div className="customer-stat__value">{totalCustomers.toLocaleString()}</div>
             <div className="customer-stat__label">Tổng khách hàng theo dõi</div>
           </div>
         </div>
@@ -250,11 +383,45 @@ export default function CustomersPage() {
         </div>
       </div>
 
+      {/* Store scope selector: customers are only visible after choosing a shop. */}
+      <section className="customer-store-groups">
+        <div className="customer-store-groups__header">
+          <div>
+            <h2>Cửa hàng đã kết nối</h2>
+            <p>Chọn một cửa hàng để xem khách hàng đã mua hàng và đánh giá cửa hàng đó.</p>
+          </div>
+          {selectedGroup && <span className="customer-store-groups__scope">Phạm vi: {selectedGroup.store.name}</span>}
+        </div>
+        {storeGroups.length === 0 ? (
+          <div className="customer-store-groups__empty">Chưa có cửa hàng nào được kết nối. Dữ liệu khách hàng đang được ẩn.</div>
+        ) : (
+          <div className="customer-store-groups__list">
+            {storeGroups.map(({ store, customers: storeCustomers }) => (
+              <button
+                type="button"
+                key={store.id}
+                className={`customer-store-card ${activeStoreId === store.id ? 'active' : ''}`}
+                onClick={() => { setSelectedStoreId(store.id); setPage(1); setSelectedCustomer(null); }}
+              >
+                <span className="customer-store-card__platform">{store.platform}</span>
+                <strong>{store.name}</strong>
+                <span>{storeCustomers.length} khách hàng có đánh giá</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Table */}
       <div className="customers-table-wrapper">
         {loading ? (
           <div className="empty-state">Đang tải danh sách & dữ liệu rủi ro khách hàng...</div>
-        ) : customers.length === 0 ? (
+        ) : !selectedGroup ? (
+          <div className="empty-state">
+            <Store size={36} />
+            <p>{storeGroups.length ? 'Hãy chọn một cửa hàng để xem danh sách khách hàng.' : 'Kết nối cửa hàng để bắt đầu phân tích khách hàng.'}</p>
+          </div>
+        ) : displayedCustomers.length === 0 ? (
           <div className="empty-state">
             <Users size={36} />
             <p>Không tìm thấy khách hàng phù hợp.</p>
@@ -272,7 +439,7 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((c) => {
+              {displayedCustomers.map((c) => {
                 const isRisk = c.riskLevel === 'POTENTIAL_BOMMER';
                 const isVip = c.riskLevel === 'VIP';
                 const reasonCls = isRisk ? 'evidence-reason-tag--risk' : isVip ? 'evidence-reason-tag--vip' : 'evidence-reason-tag--normal';
@@ -344,6 +511,26 @@ export default function CustomersPage() {
               })}
             </tbody>
           </table>
+        )}
+
+        {totalPages > 1 && (
+          <div className="customers-pagination">
+            <span className="customers-pagination__info">Trang {page}/{totalPages} · {totalCustomers} khách hàng</span>
+            <div className="customers-pagination__controls">
+              <button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let p;
+                if (totalPages <= 5) p = i + 1;
+                else if (page <= 3) p = i + 1;
+                else if (page >= totalPages - 2) p = totalPages - 4 + i;
+                else p = page - 2 + i;
+                return (
+                  <button key={p} className={p === page ? 'active' : ''} onClick={() => setPage(p)}>{p}</button>
+                );
+              })}
+              <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -446,5 +633,3 @@ export default function CustomersPage() {
     </div>
   );
 }
-
-
