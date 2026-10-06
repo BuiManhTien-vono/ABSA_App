@@ -97,48 +97,42 @@
 .platform-store-list {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 24px;
 }
 
 .platform-store {
-  overflow: hidden;
-  border: 1px solid #e1e6ed;
-  border-radius: 11px;
-  background: #fff;
-  box-shadow: 0 3px 12px rgba(25, 34, 53, 0.025);
+  overflow: visible;
 }
 
 .platform-store.is-expanded {
-  border-color: #d1cdef;
-  box-shadow: 0 8px 23px rgba(25, 34, 53, 0.055);
 }
 
 .platform-store__toggle {
-  display: grid;
+  display: flex;
   width: 100%;
-  grid-template-columns: 42px minmax(0, 1fr) 92px 92px auto;
   align-items: center;
-  gap: 13px;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 0 0 6px;
   border: 0;
-  color: #344054;
-  background: #fff;
+  border-bottom: 2px solid #e2e8f0;
+  color: #0f172a;
+  background: transparent;
   text-align: left;
   cursor: pointer;
 }
 
 .platform-store__toggle:hover {
-  background: #fcfcfe;
+  border-bottom-color: #94a3b8;
 }
 
 .platform-store__avatar {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #f1f3f8;
-  font-size: 21px;
+  font-size: 19px;
 }
 
 .platform-store__identity,
@@ -146,13 +140,14 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .platform-store__identity strong {
   overflow: hidden;
-  color: #2b3546;
-  font-size: 12px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -160,8 +155,8 @@
 .platform-store__identity small,
 .platform-store__metric small {
   overflow: hidden;
-  color: #929ba9;
-  font-size: 9px;
+  color: #94a3b8;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -171,27 +166,31 @@
 }
 
 .platform-store__metric strong {
-  color: #3e485a;
-  font-size: 12px;
+  color: #475569;
+  font-size: 13px;
 }
 
 .platform-store__toggle > svg {
-  color: #9099a8;
+  color: #94a3b8;
   transition: transform 160ms ease;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .platform-store.is-expanded .platform-store__toggle > svg {
-  color: #5b50c7;
+  color: #4f46e5;
   transform: rotate(180deg);
+}
+
+.platform-store.is-expanded .platform-store__toggle {
+  border-bottom-color: #4f46e5;
 }
 
 .platform-store__products {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
   gap: 12px;
-  padding: 14px;
-  border-top: 1px solid #e9ecf1;
-  background: #f8f9fb;
+  padding: 12px 0;
 }
 
 .platform-store__empty {
@@ -200,6 +199,85 @@
   color: #8791a1;
   font-size: 11px;
   text-align: center;
+}
+
+/* Category accordion nested inside store */
+.platform-store__categories {
+  padding-top: 8px;
+}
+
+.platform-category-group {
+  margin-bottom: 2px;
+}
+
+.platform-category-group:last-child {
+  margin-bottom: 0;
+}
+
+.platform-category-group__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border: 0;
+  color: #475569;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 120ms ease;
+}
+
+.platform-category-group__toggle:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.platform-category-group__name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  color: #334155;
+  font-size: 13px;
+}
+
+.platform-category-group__stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.platform-category-group__toggle > svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 160ms ease;
+}
+
+.platform-category-group.is-expanded > .platform-category-group__toggle > svg {
+  color: #4f46e5;
+  transform: rotate(180deg);
+}
+
+.platform-category-group.is-expanded > .platform-category-group__toggle {
+  background: transparent;
+  color: #1e293b;
+}
+
+.platform-category-group.is-expanded .platform-category-group__name {
+  color: #1e293b;
+}
+
+.platform-category-group.is-expanded .platform-category-group__stats {
+  color: #64748b;
 }
 
 .platform-product-card {
@@ -338,10 +416,6 @@
     width: 100%;
   }
 
-  .platform-store__toggle {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
-  }
-
   .platform-store__metric {
     display: none;
   }
@@ -350,6 +424,6 @@
 @media (max-width: 480px) {
   .platform-store__products {
     grid-template-columns: 1fr;
-    padding: 10px;
+    padding: 10px 0;
   }
 }

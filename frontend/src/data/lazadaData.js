@@ -290,6 +290,11 @@ export function getLazadaProductsForCategory(storeId, categoryId) {
   const products = [];
   
   templates.forEach((template, idx) => {
+    const reviewCount = Math.floor(45 + (idx * 17) % 40);
+    const posCount = Math.round(reviewCount * 0.7);
+    const neuCount = Math.round(reviewCount * 0.2);
+    const negCount = reviewCount - posCount - neuCount;
+
     products.push({
       id: `${storeId}-${categoryId}-p${idx + 1}`,
       storeId,
@@ -301,6 +306,10 @@ export function getLazadaProductsForCategory(storeId, categoryId) {
       originalPrice: template.orig,
       discount: Math.round(((template.orig - template.price) / template.orig) * 100),
       rating: template.rating,
+      reviewCount,
+      posCount,
+      neuCount,
+      negCount,
       sold: Math.floor(Math.random() * 2000) + 100,
       stock: Math.floor(Math.random() * 500) + 10,
       image: getSampleImage(category.code, idx),

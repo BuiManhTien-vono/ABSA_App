@@ -10,7 +10,7 @@ const SENTIMENT_BADGES = {
   MIXED: 'badge--mixed',
 };
 
-const DEFAULT_MOCK_TEMPLATES = [
+export const DEFAULT_MOCK_TEMPLATES = [
   {
     id: 'tpl-1',
     title: 'Cảm ơn Đánh Giá 5 Sao & Tặng Voucher 10%',

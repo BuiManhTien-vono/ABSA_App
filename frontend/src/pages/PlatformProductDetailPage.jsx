@@ -36,19 +36,19 @@ const PLATFORM_DATA = {
     name: 'Shopee',
     stores: SHOPEE_STORES,
     findProduct: findShopeeProduct,
-    generateComments: (product) => generateMockComments(product, 50),
+    generateComments: (product) => generateMockComments(product, product.reviewCount || 50),
   },
   lazada: {
     name: 'Lazada',
     stores: LAZADA_STORES,
     findProduct: findLazadaProductById,
-    generateComments: (product) => generateLazadaMockComments(product, 50),
+    generateComments: (product) => generateLazadaMockComments(product, product.reviewCount || 50),
   },
   'tiktok-shop': {
     name: 'TikTok Shop',
     stores: TIKTOK_SHOP_STORES,
     findProduct: findTikTokShopProductById,
-    generateComments: (product) => generateTikTokShopMockComments(product, 50),
+    generateComments: (product) => generateTikTokShopMockComments(product, product.reviewCount || 50),
   },
 };
 

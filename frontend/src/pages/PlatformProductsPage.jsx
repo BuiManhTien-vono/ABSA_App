@@ -69,9 +69,11 @@ function readConnectedStoreIds(platformCode, allStores) {
       return allStores.map((store) => String(store.id));
     }
   } catch {
-    return [];
+    // Fallthrough to demo fallback
   }
-  return [];
+
+  // Demo Fallback
+  return allStores.map((store) => String(store.id)).slice(0, platformCode === 'tiktok-shop' ? 2 : 3);
 }
 
 function formatPrice(value) {
@@ -91,6 +93,7 @@ export default function PlatformProductsPage() {
   const [expandedStoreIds, setExpandedStoreIds] = useState(
     () => new Set(connectedStoreIds.slice(0, 1)),
   );
+  const [expandedCategoryKeys, setExpandedCategoryKeys] = useState(() => new Set());
   const [search, setSearch] = useState('');
 
   const storeGroups = useMemo(() => {
@@ -101,23 +104,40 @@ export default function PlatformProductsPage() {
     return platform.stores
       .filter((store) => connectedIdSet.has(String(store.id)))
       .map((store) => {
-        const products = (platform.categories[store.id] || []).flatMap((category) => (
-          platform.getProducts(store.id, category.id).map((product) => ({
+        const storeCategories = platform.categories[store.id] || [];
+        const categoryGroups = storeCategories.map((category) => {
+          const catProducts = platform.getProducts(store.id, category.id).map((product) => ({
             ...product,
             storeName: product.storeName || store.name,
             platformCode,
-          }))
-        ));
-        if (!query) return { store, products };
+          }));
+          return { category, products: catProducts };
+        });
+
+        const allProducts = categoryGroups.flatMap((g) => g.products);
+
+        if (!query) return { store, products: allProducts, categoryGroups };
 
         const storeMatches = [store.name, store.code, store.category]
           .some((value) => value?.toLocaleLowerCase('vi').includes(query));
-        const matchingProducts = products.filter((product) => (
-          [product.name, product.sku, product.categoryName]
-            .some((value) => value?.toLocaleLowerCase('vi').includes(query))
-        ));
-        return storeMatches || matchingProducts.length
-          ? { store, products: storeMatches ? products : matchingProducts }
+
+        if (storeMatches) return { store, products: allProducts, categoryGroups };
+
+        const filteredGroups = categoryGroups
+          .map((g) => {
+            const catNameMatches = g.category.name?.toLocaleLowerCase('vi').includes(query);
+            if (catNameMatches) return g;
+            const matchingProducts = g.products.filter((product) => (
+              [product.name, product.sku, product.categoryName]
+                .some((value) => value?.toLocaleLowerCase('vi').includes(query))
+            ));
+            return matchingProducts.length ? { ...g, products: matchingProducts } : null;
+          })
+          .filter(Boolean);
+
+        const matchingProducts = filteredGroups.flatMap((g) => g.products);
+        return matchingProducts.length
+          ? { store, products: matchingProducts, categoryGroups: filteredGroups }
           : null;
       })
       .filter(Boolean);
@@ -138,6 +158,15 @@ export default function PlatformProductsPage() {
       const next = new Set(current);
       if (next.has(storeId)) next.delete(storeId);
       else next.add(storeId);
+      return next;
+    });
+  }
+
+  function toggleCategory(key) {
+    setExpandedCategoryKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -182,9 +211,10 @@ export default function PlatformProductsPage() {
         </div>
       ) : (
         <div className="platform-store-list">
-          {storeGroups.map(({ store, products }) => {
+          {storeGroups.map(({ store, products, categoryGroups }) => {
             const storeId = String(store.id);
             const isExpanded = expandedStoreIds.has(storeId) || Boolean(search.trim());
+            const totalReviewCount = products.reduce((s, p) => s + (p.reviewCount || 0), 0);
             return (
               <section className={`platform-store ${isExpanded ? 'is-expanded' : ''}`} key={store.id}>
                 <button
@@ -200,38 +230,68 @@ export default function PlatformProductsPage() {
                   </span>
                   <span className="platform-store__metric">
                     <strong>{products.length}</strong>
-                    <small>sản phẩm mock</small>
+                    <small>sản phẩm</small>
                   </span>
                   <span className="platform-store__metric">
-                    <strong>{store.reviewCount?.toLocaleString('vi-VN') || 0}</strong>
+                    <strong>{totalReviewCount.toLocaleString('vi-VN')}</strong>
                     <small>đánh giá</small>
                   </span>
                   <ChevronDown size={18} />
                 </button>
 
                 {isExpanded && (
-                  <div className="platform-store__products">
-                    {products.length === 0 ? (
+                  <div className="platform-store__categories">
+                    {categoryGroups.length === 0 ? (
                       <div className="platform-store__empty">Cửa hàng chưa có sản phẩm phù hợp.</div>
-                    ) : products.map((product) => (
-                      <article className="platform-product-card" key={product.id}>
-                        <div className="platform-product-card__main">
-                          <img src={product.image} alt={product.name} />
-                          <div>
-                            <span>{product.categoryName}</span>
-                            <h2 title={product.name}>{product.name}</h2>
-                            <small>SKU: {product.sku || 'N/A'}</small>
-                          </div>
+                    ) : categoryGroups.map(({ category, products: catProducts }) => {
+                      const catKey = `${storeId}::${category.id}`;
+                      const isCatExpanded = expandedCategoryKeys.has(catKey) || Boolean(search.trim());
+                      const catReviewCount = catProducts.reduce((s, p) => s + (p.reviewCount || 0), 0);
+                      return (
+                        <div className={`platform-category-group ${isCatExpanded ? 'is-expanded' : ''}`} key={category.id}>
+                          <button
+                            className="platform-category-group__toggle"
+                            type="button"
+                            onClick={() => toggleCategory(catKey)}
+                            aria-expanded={isCatExpanded}
+                          >
+                            <span className="platform-category-group__name">
+                              {category.name}
+                            </span>
+                            <span className="platform-category-group__stats">
+                              <span>{catProducts.length} sản phẩm</span>
+                              <span>·</span>
+                              <span>{catReviewCount.toLocaleString('vi-VN')} đánh giá</span>
+                            </span>
+                            <ChevronDown size={15} />
+                          </button>
+
+                          {isCatExpanded && (
+                            <div className="platform-store__products">
+                              {catProducts.map((product) => (
+                                <article className="platform-product-card" key={product.id}>
+                                  <div className="platform-product-card__main">
+                                    <img src={product.image} alt={product.name} />
+                                    <div>
+                                      <span>{product.categoryName}</span>
+                                      <h2 title={product.name}>{product.name}</h2>
+                                      <small>SKU: {product.sku || 'N/A'}</small>
+                                    </div>
+                                  </div>
+                                  <div className="platform-product-card__summary">
+                                    <strong>{formatPrice(product.price)}</strong>
+                                    <span><Star size={13} fill="currentColor" /> {Number(product.rating || 0).toFixed(1)}</span>
+                                  </div>
+                                  <Link to={`/products/${platformCode}/${product.id}`}>
+                                    Xem sản phẩm <span aria-hidden="true">→</span>
+                                  </Link>
+                                </article>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="platform-product-card__summary">
-                          <strong>{formatPrice(product.price)}</strong>
-                          <span><Star size={13} fill="currentColor" /> {Number(product.rating || 0).toFixed(1)}</span>
-                        </div>
-                        <Link to={`/products/${platformCode}/${product.id}`}>
-                          Xem sản phẩm <span aria-hidden="true">→</span>
-                        </Link>
-                      </article>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>

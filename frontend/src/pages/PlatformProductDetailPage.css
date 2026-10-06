@@ -1,6 +1,4 @@
 .platform-detail-page {
-  max-width: 1080px;
-  margin: 0 auto;
   color: #263043;
 }
 
@@ -20,10 +18,7 @@
   grid-template-columns: 90px minmax(0, 1fr) auto;
   align-items: center;
   gap: 17px;
-  padding: 20px;
-  border: 1px solid #e1e6ed;
-  border-radius: 11px;
-  background: #fff;
+  padding: 20px 0;
 }
 
 .platform-detail-hero > img {
@@ -142,9 +137,8 @@
 
 .platform-aspect-table-wrap {
   overflow-x: auto;
-  border: 1px solid #e1e6ed;
+  border: 1px solid #eef1f4;
   border-radius: 9px;
-  background: #fff;
 }
 
 .platform-aspect-table {
@@ -186,9 +180,8 @@
 
 .platform-comment-list {
   overflow: hidden;
-  border: 1px solid #e1e6ed;
+  border: 1px solid #eef1f4;
   border-radius: 9px;
-  background: #fff;
 }
 
 .platform-comment {

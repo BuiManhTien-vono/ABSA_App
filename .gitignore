@@ -17,6 +17,7 @@ ENV/
 # Node.js
 node_modules/
 dist/
+frontend/dist_check/
 dist-ssr/
 .vite/
 *.local
