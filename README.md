@@ -5,7 +5,7 @@
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-red?style=for-the-badge&logo=microsoftsqlserver)
 ![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-1.17-blue?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.0-cyan?style=for-the-badge&logo=react)
-![Vite](https://img.shields.io/badge/Vite-6.0-purple?style=for-the-badge&logo=vite)
+![Vite](https://img.shields.io/badge/Vite-8.0-purple?style=for-the-badge&logo=vite)
 ![JWT Auth](https://img.shields.io/badge/Security-JWT%20%2B%20Refresh%20Token-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -25,7 +25,7 @@
 4. **Tự Động Sinh Insight Cho Nhà Bán Hàng (Insight Engine)**:
    - Tự động tổng hợp **Tóm tắt cảm nhận** (*Customer Insight*), **Nguyên nhân cốt lõi** (*Root Cause*), **Khuyến nghị cải thiện** (*Business Recommendation*) và **Câu phản hồi mẫu** (*Suggested Seller Response*).
 5. **Hệ Thống Cơ Sở Dữ Liệu SQL Server & Tự Động Mở Ticket Khiếu Nại**:
-   - Lưu trữ tự động 14 bảng quan hệ trên SQL Server. Bài đánh giá tiêu cực (`NEG`) được tự động khởi tạo **Ticket CSKH** cho nhân viên xử lý.
+   - Lưu trữ trên 15 bảng quan hệ SQL Server. Bài đánh giá tiêu cực (`NEG`) có thể tự động khởi tạo **Ticket CSKH**.
 6. **Bảo Mật RESTful Enterprise Auth (JWT + Refresh Token Rotation)**:
    - Mã hóa mật khẩu chuẩn **BCrypt**, cơ chế **Access Token (60 phút)** + **Refresh Token Rotation (lưu vết IP/thiết bị)** và phân quyền vai trò (**RBAC**: `ADMIN`, `STORE_MANAGER`, `CSKH_STAFF`).
 
@@ -38,11 +38,11 @@
 ```mermaid
 graph TD
     subgraph Client Layer
-        FE[Frontend - React 19 / Vite 6 SPA<br/>Port 5173]
+        FE[Frontend - React 19 / Vite 8 SPA<br/>Port 5173]
     end
 
     subgraph Core Application Layer (.NET 10)
-        API[C# ASP.NET Core Web API<br/>Port 8001]
+        API[C# ASP.NET Core Web API<br/>Port 5058]
         Tokenizer[SentencePiece Unigram Tokenizer]
         ONNXEngine[ONNX Runtime Inference Engine]
         EF[Entity Framework Core 10]
@@ -83,7 +83,7 @@ HIGEN-ABSA-App/
 ├── ai-service/                           # Pipeline Lưu trữ & Export Mô hình AI
 │   ├── models/visobert_absa_v8/          # ONNX model (best_model.onnx, best_model.onnx.data) & Tokenizer
 │   └── export_onnx.py                    # Script export PyTorch sang ONNX format
-├── frontend/                             # Giao diện SPA React 19 + Vite 6
+├── frontend/                             # Giao diện SPA React 19 + Vite 8
 │   ├── src/
 │   │   ├── api/                          # API Client tự động đính kèm Bearer Token
 │   │   ├── components/                   # ReviewInput, AspectTable, InsightCards, AuthModal
@@ -99,7 +99,7 @@ HIGEN-ABSA-App/
 
 ## 4. BẢNG CƠ SỞ DỮ LIỆU SQL SERVER (DATABASE SCHEMA)
 
-Cơ sở dữ liệu SQL Server (`HigenAbsaDb`) gồm 14 bảng chia thành 5 phân khu nghiệp vụ:
+Cơ sở dữ liệu SQL Server (`HigenAbsaDb`) gồm 15 bảng chia thành 5 phân khu nghiệp vụ:
 
 | Phân khu Nghiệp vụ | Danh sách Bảng | Mô tả |
 | :--- | :--- | :--- |
@@ -129,8 +129,8 @@ cd backend-dotnet/HigenAbsa.Api
 dotnet run --urls "http://0.0.0.0:5058"
 ```
 
-- **API Base URL (LAN)**: `http://172.20.10.4:5058`
-- **Swagger UI Interactive Docs**: `http://172.20.10.4:5058/swagger`
+- **API Base URL**: `http://localhost:5058`
+- **Swagger UI Interactive Docs**: `http://localhost:5058/swagger`
 
 ---
 
@@ -139,18 +139,62 @@ dotnet run --urls "http://0.0.0.0:5058"
 ```bash
 cd frontend
 
-# Cài đặt thư viện
-npm install
+# Cài đúng phiên bản thư viện theo package-lock.json
+npm ci
 
 # Khởi chạy Vite Dev Server
 npm run dev
 ```
 
-- **Frontend App (LAN)**: `http://172.20.10.4:5173`
+- **Frontend App**: `http://localhost:5173`
 
 ---
 
-## 6. TÀI LIỆU API ENDPOINTS
+## 6. HƯỚNG DẪN SỬ DỤNG ỨNG DỤNG
+
+Phần này hướng dẫn các thao tác cơ bản sau khi backend và frontend đã chạy theo mục **Hướng dẫn khởi chạy**.
+
+### 6.1. Đăng nhập hoặc tạo tài khoản
+
+Bỏ qua bước đăng ký/đăng nhập vì hiện tại app tập trung vào demo tính năng chính, khi chạy chương trình sẽ lập tức vào trang **Tổng quan**.
+
+### 6.2. Xem tổng quan và phân tích file đánh giá
+
+1. Mở **Tổng quan** để xem KPI, xu hướng cảm xúc, phân bổ theo sàn và các đánh giá cần chú ý.
+2. Chọn **Phân tích File Excel Đánh giá** để tải tệp mẫu hoặc tải lên `.xlsx`, `.xls` hay `.csv`. Tệp mẫu [`test_template.csv`](test_template.csv) có các cột `product_id`, `title`, `content`, `rating`.
+3. Chờ ViSoBERT phân tích. Kết quả hiển thị sentiment, khía cạnh được nhận diện và thống kê theo khía cạnh. Luồng tải lên hiện yêu cầu lưu kết quả vào database.
+
+### 6.3. Tra cứu sản phẩm và đánh giá
+
+1. Mở **Sản phẩm** để duyệt gian hàng, danh mục và sản phẩm; chọn sản phẩm để xem chi tiết.
+2. Mở **Phản hồi (Feed)**, chọn gian hàng hoặc dùng bộ lọc và tìm kiếm để thu hẹp danh sách.
+3. Chọn một đánh giá để xem số sao, nội dung, sentiment tổng thể (`POS`, `NEU`, `NEG`, `MIXED`), khía cạnh macro/micro, evidence và insight AI nếu có.
+4. Ở phần phản hồi, xem câu trả lời gợi ý hoặc mẫu, chỉnh sửa nội dung rồi gửi. Nhân viên thực hiện bước gửi thủ công.
+
+### 6.4. Theo dõi khách hàng và xử lý ticket
+
+1. Mở **Khách hàng** để tra cứu hồ sơ và các đánh giá liên quan.
+2. Mở **Ticket CSKH** rồi chọn một ticket để xem review gốc và thông tin xử lý.
+3. Màn hình có chế độ Kanban/bảng và bộ lọc theo trạng thái. Khi đánh dấu đã giải quyết, nhập ghi chú kết quả.
+4. Backend có luồng tạo ticket cho review được phân tích là `NEG`. Nếu API chưa trả ticket, màn hình có thể hiển thị dữ liệu demo. Trong phiên bản hiện tại, thao tác đổi trạng thái từ giao diện chưa được nối đúng với API; không xem thay đổi đó là đã lưu vào database.
+
+### 6.5. Quản lý mẫu phản hồi và quy tắc
+
+1. Mở **Mẫu & Quy tắc** để tạo/chỉnh sửa mẫu và điều kiện theo số sao, sentiment hoặc khía cạnh.
+2. Có thể bật/tắt quy tắc và dùng mẫu làm cơ sở soạn câu trả lời.
+3. Hiện app lưu và quản lý cấu hình quy tắc; chưa tự chạy quy tắc để gửi phản hồi thay cho nhân viên. Phản hồi trên Feed cần được nhân viên xem lại và gửi.
+
+### 6.6. Kết nối sàn và dữ liệu demo
+
+- Trang **Kết nối sàn** cho phép chọn gian hàng và thao tác đồng bộ trong giao diện. Luồng chọn cửa hàng hiện chủ yếu phục vụ demo; đồng bộ backend cập nhật thời điểm đồng bộ mô phỏng, không tự tải đánh giá thật từ mọi sàn.
+- Backend có các endpoint OAuth/API cho Lazada, nhưng cần cấu hình ứng dụng và callback phù hợp trước khi dùng với tài khoản sàn thật. Giao diện hiện tại không có nghĩa cả bốn sàn đã kết nối production.
+- Dữ liệu Shopee, Tiki và TikTok Shop trên một số màn hình là dữ liệu mẫu. Hãy nêu rõ dữ liệu demo khi trình bày kết quả.
+
+### 6.7. Quản trị và đăng xuất
+
+Bỏ qua phần quản trị người dùng và phân quyền trong phiên bản demo.
+
+## 7. TÀI LIỆU API ENDPOINTS
 
 ### 🔑 Authentication Endpoints (`/api/v1/auth/`)
 
@@ -174,6 +218,6 @@ npm run dev
 
 ---
 
-## 7. GIẤY PHÉP (LICENSE)
+## 8. GIẤY PHÉP (LICENSE)
 
 Dự án được phát hành theo giấy phép **MIT License**.
