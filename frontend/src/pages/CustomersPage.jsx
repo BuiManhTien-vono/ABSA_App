@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Users, Store, Search, ShieldAlert, Crown, UserCheck, X, Sparkles, AlertTriangle, Eye, MessageSquare } from 'lucide-react';
+import { Users, Store, Search, ShieldAlert, Crown, UserCheck, X, Sparkles, AlertTriangle, Eye, MessageSquare, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import customerService from '../services/customerService';
 import './CustomersPage.css';
 
@@ -247,6 +248,7 @@ function generateCustomerStoreGroups() {
 }
 
 export default function CustomersPage() {
+  const navigate = useNavigate();
   const [storeGroups, setStoreGroups] = useState(() => generateCustomerStoreGroups());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -494,6 +496,15 @@ export default function CustomersPage() {
                           onClick={() => setSelectedCustomer(c)}
                         >
                           <Eye size={12} /> Bằng chứng
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--secondary btn--sm"
+                          style={{ fontSize: 11, padding: '4px 8px' }}
+                          onClick={() => navigate(`/customers/${c.id}/analysis`, { state: { customer: c } })}
+                          aria-label={`Xem phân tích ${c.displayName || 'khách hàng'}`}
+                        >
+                          <BarChart3 size={12} /> Phân tích
                         </button>
                         <select
                           className="customer-risk-select"

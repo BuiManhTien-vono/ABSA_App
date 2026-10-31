@@ -1,8 +1,31 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/HigenAbsa.Application/HigenAbsa.Application.csproj" />
-    <Project Path="src/HigenAbsa.Domain/HigenAbsa.Domain.csproj" />
-    <Project Path="src/HigenAbsa.Infrastructure/HigenAbsa.Infrastructure.csproj" />
-    <Project Path="src/HigenAbsa.WebApi/HigenAbsa.WebApi.csproj" />
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/HigenAbsa.WebApi/HigenAbsa.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/HigenAbsa.Infrastructure/HigenAbsa.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Security/">
+    <Project Path="src/Modules/Security/HigenAbsa.Modules.Security/HigenAbsa.Modules.Security.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/CoreSync/">
+    <Project Path="src/Modules/CoreSync/HigenAbsa.Modules.CoreSync/HigenAbsa.Modules.CoreSync.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Inference/">
+    <Project Path="src/Modules/Inference/HigenAbsa.Modules.Inference/HigenAbsa.Modules.Inference.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Engagement/">
+    <Project Path="src/Modules/Engagement/HigenAbsa.Modules.Engagement/HigenAbsa.Modules.Engagement.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Reporting/">
+    <Project Path="src/Modules/Reporting/HigenAbsa.Modules.Reporting/HigenAbsa.Modules.Reporting.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/HigenAbsa.SharedKernel/HigenAbsa.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HigenAbsa.UnitTests/HigenAbsa.UnitTests.csproj" />
   </Folder>
 </Solution>

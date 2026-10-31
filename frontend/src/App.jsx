@@ -7,6 +7,7 @@ import ProductsPage from './pages/ProductsPage';
 import PlatformProductsPage from './pages/PlatformProductsPage';
 import PlatformProductDetailPage from './pages/PlatformProductDetailPage';
 import CustomersPage from './pages/CustomersPage';
+import CustomerAnalysisPage from './pages/CustomerAnalysisPage';
 import ReviewFeedPage from './pages/ReviewFeedPage';
 import ConnectPage from './pages/ConnectPage';
 import ShopeeStoresPage from './pages/ShopeeStoresPage';
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/products/:platformCode" element={<PlatformProductsPage />} />
               <Route path="/products/:platformCode/:id" element={<PlatformProductDetailPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/customers/:id/analysis" element={<CustomerAnalysisPage />} />
               <Route path="/reviews" element={<ReviewFeedPage />} />
               <Route path="/connect" element={<ConnectPage />} />
               <Route path="/connect/shopee" element={<ShopeeStoresPage />} />

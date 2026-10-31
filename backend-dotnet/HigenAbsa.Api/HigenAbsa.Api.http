@@ -1,6 +1,0 @@
-@HigenAbsa.Api_HostAddress = http://172.20.10.4:5058
-
-GET {{HigenAbsa.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
