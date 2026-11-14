@@ -37,18 +37,18 @@ function StarRating({ rating = 5 }) {
   );
 }
 
-function getMockReviewsForStore(storeId) {
+function getMockReviewsForStore(storeId, limitPerProd = 6, maxCategories = 2, maxProdsPerCat = 2) {
   const store = LAZADA_STORES.find(s => s.id === storeId) || SHOPEE_STORES.find(s => s.id === storeId) || TIKTOK_SHOP_STORES.find(s => s.id === storeId);
   const storeName = store ? store.name : 'Cửa hàng';
 
   // 1. If Lazada store: generate rich comments per product
   if (LAZADA_STORE_CATEGORIES[storeId]) {
-    const categories = LAZADA_STORE_CATEGORIES[storeId] || [];
+    const categories = (LAZADA_STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
     const reviews = [];
     categories.forEach(cat => {
-      const prods = getLazadaProductsForCategory(storeId, cat.id);
+      const prods = (getLazadaProductsForCategory(storeId, cat.id) || []).slice(0, maxProdsPerCat);
       prods.forEach(prod => {
-        const comments = generateLazadaMockComments(prod, prod.reviewCount || 50);
+        const comments = generateLazadaMockComments(prod, limitPerProd);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -84,12 +84,12 @@ function getMockReviewsForStore(storeId) {
 
   // 2. If TikTok Shop store: generate rich TikTok-style comments per product
   if (TIKTOK_SHOP_STORE_CATEGORIES[storeId]) {
-    const categories = TIKTOK_SHOP_STORE_CATEGORIES[storeId] || [];
+    const categories = (TIKTOK_SHOP_STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
     const reviews = [];
     categories.forEach(cat => {
-      const prods = getTikTokShopProductsForCategory(storeId, cat.id);
+      const prods = (getTikTokShopProductsForCategory(storeId, cat.id) || []).slice(0, maxProdsPerCat);
       prods.forEach(prod => {
-        const comments = generateTikTokShopMockComments(prod, prod.reviewCount || 50);
+        const comments = generateTikTokShopMockComments(prod, limitPerProd);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -125,12 +125,12 @@ function getMockReviewsForStore(storeId) {
 
   // 3. If Shopee store: generate rich Shopee-style comments per product
   if (STORE_CATEGORIES[storeId]) {
-    const categories = STORE_CATEGORIES[storeId] || [];
+    const categories = (STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
     const reviews = [];
     categories.forEach(cat => {
-      const prods = getProductsForCategory(storeId, cat.id, { includeComments: false });
+      const prods = (getProductsForCategory(storeId, cat.id, { includeComments: false }) || []).slice(0, maxProdsPerCat);
       prods.forEach(prod => {
-        const comments = generateMockComments(prod, prod.reviewCount || 50);
+        const comments = generateMockComments(prod, limitPerProd);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -166,7 +166,7 @@ function getMockReviewsForStore(storeId) {
 
   // 4. Fallback generator: creates domain-accurate comments for any custom or non-standard mock store
   const fallbackProduct = { id: `prod-${storeId}`, name: storeName, categoryName: store ? store.category : 'Tổng hợp' };
-  const mockComments = generateMockComments(fallbackProduct, store?.reviewCount || 50);
+  const mockComments = generateMockComments(fallbackProduct, 10);
   return mockComments.map((c, i) => ({
     id: `mock-rev-${storeId}-${i + 1}`,
     platformReviewId: `REV_${storeId}_${i + 1}`,
@@ -307,72 +307,80 @@ export default function ReviewFeedPage() {
   }
 
   async function loadReviews() {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      // If a mock store is selected from dropdown
-      if (storeId && (storeId.startsWith('lzd-') || storeId.startsWith('shopee-') || storeId.startsWith('spe-') || storeId.startsWith('tts-') || storeId.startsWith('mock-'))) {
-        let mockList = getMockReviewsForStore(storeId);
+    // Yield control to the browser so the skeleton UI paints instantly before processing
+    setTimeout(async () => {
+      try {
+        // If a mock store is selected from dropdown
+        if (storeId && (storeId.startsWith('lzd-') || storeId.startsWith('shopee-') || storeId.startsWith('spe-') || storeId.startsWith('tts-') || storeId.startsWith('mock-'))) {
+          let mockList = getMockReviewsForStore(storeId);
 
-        if (rating) mockList = mockList.filter(r => String(r.rating) === String(rating));
-        if (sentiment) mockList = mockList.filter(r => r.overallSentiment === sentiment);
-        if (status) mockList = mockList.filter(r => r.status === status);
-        if (search) {
-          const q = search.toLowerCase();
-          mockList = mockList.filter(r =>
-            (r.commentText && r.commentText.toLowerCase().includes(q)) ||
-            (r.customerName && r.customerName.toLowerCase().includes(q)) ||
-            (r.productName && r.productName.toLowerCase().includes(q))
-          );
+          if (rating) mockList = mockList.filter(r => String(r.rating) === String(rating));
+          if (sentiment) mockList = mockList.filter(r => r.overallSentiment === sentiment);
+          if (status) mockList = mockList.filter(r => r.status === status);
+          if (search) {
+            const q = search.toLowerCase();
+            mockList = mockList.filter(r =>
+              (r.commentText && r.commentText.toLowerCase().includes(q)) ||
+              (r.customerName && r.customerName.toLowerCase().includes(q)) ||
+              (r.productName && r.productName.toLowerCase().includes(q))
+            );
+          }
+
+          setAllReviews(mockList);
+          return;
         }
 
-        setAllReviews(mockList);
-        return;
-      }
-
-      // Fetch DB reviews
-      const res = await reviewService.getReviews({
-        page: 1,
-        pageSize: 200,
-        storeId: storeId || undefined,
-        rating: rating ? parseInt(rating, 10) : undefined,
-        sentiment,
-        status,
-        search,
-      });
-
-      let items = res?.items || [];
-
-      // If All Stores is selected, combine DB reviews and mock reviews strictly for connected stores
-      if (!storeId) {
-        let aggregated = [];
-        const connectedMockStores = storesList.filter(s => s.isMock);
-        // Only load reviews from stores that the user has actually connected!
-        connectedMockStores.forEach(s => {
-          aggregated = aggregated.concat(getMockReviewsForStore(s.id));
-        });
-
-        if (rating) aggregated = aggregated.filter(r => String(r.rating) === String(rating));
-        if (sentiment) aggregated = aggregated.filter(r => r.overallSentiment === sentiment);
-        if (status) aggregated = aggregated.filter(r => r.status === status);
-        if (search) {
-          const q = search.toLowerCase();
-          aggregated = aggregated.filter(r =>
-            (r.commentText && r.commentText.toLowerCase().includes(q)) ||
-            (r.customerName && r.customerName.toLowerCase().includes(q)) ||
-            (r.productName && r.productName.toLowerCase().includes(q))
-          );
+        // Fetch DB reviews
+        let items = [];
+        try {
+          const res = await reviewService.getReviews({
+            page: 1,
+            pageSize: 200,
+            storeId: storeId || undefined,
+            rating: rating ? parseInt(rating, 10) : undefined,
+            sentiment,
+            status,
+            search,
+          });
+          items = res?.items || [];
+        } catch (e) {
+          console.error('Error fetching reviews from DB:', e);
         }
 
-        items = [...items, ...aggregated];
-      }
+        // If All Stores is selected, combine DB reviews and mock reviews strictly for connected stores
+        if (!storeId) {
+          let aggregated = [];
+          const connectedMockStores = storesList.filter(s => s.isMock);
+          // Only sample from the top 3 connected stores to keep it lightweight (< 1ms)
+          const sampleStores = connectedMockStores.slice(0, 3);
+          sampleStores.forEach(s => {
+            aggregated = aggregated.concat(getMockReviewsForStore(s.id, 5, 2, 2));
+          });
 
-      setAllReviews(items);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+          if (rating) aggregated = aggregated.filter(r => String(r.rating) === String(rating));
+          if (sentiment) aggregated = aggregated.filter(r => r.overallSentiment === sentiment);
+          if (status) aggregated = aggregated.filter(r => r.status === status);
+          if (search) {
+            const q = search.toLowerCase();
+            aggregated = aggregated.filter(r =>
+              (r.commentText && r.commentText.toLowerCase().includes(q)) ||
+              (r.customerName && r.customerName.toLowerCase().includes(q)) ||
+              (r.productName && r.productName.toLowerCase().includes(q))
+            );
+          }
+
+          items = [...items, ...aggregated];
+        }
+
+        setAllReviews(items);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, 20);
   }
 
   async function handleSeedMockData() {
@@ -445,26 +453,29 @@ export default function ReviewFeedPage() {
     }
   }
 
-  // Extract products list for the current reviews list
+  // Extract products list for the current reviews list in a single O(N) pass
   const productsList = useMemo(() => {
     const map = new Map();
-    allReviews.forEach(r => {
-      if (r.productName && !map.has(r.productName)) {
-        const prodReviews = allReviews.filter(x => x.productName === r.productName);
-        const pos = prodReviews.filter(x => x.overallSentiment === 'POS').length;
-        const neu = prodReviews.filter(x => x.overallSentiment === 'NEU').length;
-        const neg = prodReviews.filter(x => x.overallSentiment === 'NEG').length;
-        map.set(r.productName, {
-          name: r.productName,
-          count: prodReviews.length,
-          pos,
-          neu,
-          neg,
-          healthScore: Math.round((pos / Math.max(prodReviews.length, 1)) * 100),
-        });
+    for (let i = 0; i < allReviews.length; i++) {
+      const r = allReviews[i];
+      if (!r.productName) continue;
+      let entry = map.get(r.productName);
+      if (!entry) {
+        entry = { name: r.productName, count: 0, pos: 0, neu: 0, neg: 0 };
+        map.set(r.productName, entry);
       }
-    });
-    return Array.from(map.values());
+      entry.count++;
+      if (r.overallSentiment === 'POS') entry.pos++;
+      else if (r.overallSentiment === 'NEU') entry.neu++;
+      else if (r.overallSentiment === 'NEG') entry.neg++;
+    }
+
+    const result = [];
+    for (const entry of map.values()) {
+      entry.healthScore = Math.round((entry.pos / Math.max(entry.count, 1)) * 100);
+      result.push(entry);
+    }
+    return result.sort((a, b) => b.count - a.count).slice(0, 16);
   }, [allReviews]);
 
   // Filtered reviews by product

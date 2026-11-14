@@ -305,6 +305,11 @@
 }
 .customers-table tbody tr:hover { background: var(--surface-50); }
 .customers-table tbody tr.active { background: var(--brand-50); }
+.customers-table tbody tr.customer-row--returned {
+  background: var(--brand-50) !important;
+  box-shadow: inset 4px 0 0 var(--brand-600);
+  transition: all 0.3s ease;
+}
 
 .customer-row__name {
   display: flex;

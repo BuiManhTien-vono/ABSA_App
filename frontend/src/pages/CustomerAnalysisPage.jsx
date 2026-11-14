@@ -52,6 +52,19 @@ export default function CustomerAnalysisPage() {
     return () => { active = false; };
   }, [id, location.state]);
 
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      const returnStore = location.state?.returnStoreId;
+      const returnPage = location.state?.returnPage;
+      const params = new URLSearchParams();
+      if (returnStore) params.set('store', returnStore);
+      if (returnPage) params.set('page', String(returnPage));
+      navigate(`/customers?${params.toString()}`);
+    }
+  };
+
   if (loading) {
     return <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>Đang tải phân tích khách hàng...</div>;
   }
@@ -59,7 +72,7 @@ export default function CustomerAnalysisPage() {
   if (error || !customer) {
     return (
       <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
-        <button type="button" onClick={() => navigate('/customers')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'none', color: '#0369a1', cursor: 'pointer', padding: 0 }}>
+        <button type="button" onClick={handleGoBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'none', color: '#0369a1', cursor: 'pointer', padding: 0 }}>
           <ArrowLeft size={16} /> Quay lại khách hàng
         </button>
         <div style={{ marginTop: '24px', padding: '24px', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', background: '#fff1f2' }}>
@@ -78,7 +91,7 @@ export default function CustomerAnalysisPage() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
-      <button type="button" onClick={() => navigate('/customers')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'none', color: '#0369a1', cursor: 'pointer', padding: 0, marginBottom: '18px', fontSize: '13px' }}>
+      <button type="button" onClick={handleGoBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'none', color: '#0369a1', cursor: 'pointer', padding: 0, marginBottom: '18px', fontSize: '13px' }}>
         <ArrowLeft size={16} /> Quay lại danh sách khách hàng
       </button>
 

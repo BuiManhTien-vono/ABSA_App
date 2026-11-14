@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Users, Store, Search, ShieldAlert, Crown, UserCheck, X, Sparkles, AlertTriangle, Eye, MessageSquare, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import customerService from '../services/customerService';
 import './CustomersPage.css';
 
@@ -56,13 +56,13 @@ function getConnectedStoresList() {
 function getAllReviewsForStore(storeId, storeName, platform) {
   const reviews = [];
 
-  // Lazada stores
+  // Lazada stores - sample up to 3 categories and 3 products each (blazing fast)
   if (LAZADA_STORE_CATEGORIES[storeId]) {
-    const categories = LAZADA_STORE_CATEGORIES[storeId] || [];
+    const categories = (LAZADA_STORE_CATEGORIES[storeId] || []).slice(0, 3);
     categories.forEach(cat => {
-      const prods = getLazadaProductsForCategory(storeId, cat.id);
+      const prods = (getLazadaProductsForCategory(storeId, cat.id) || []).slice(0, 3);
       prods.forEach(prod => {
-        const comments = generateLazadaMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        const comments = generateLazadaMockComments(prod, 6);
         comments.forEach(c => {
           reviews.push({
             customerName: c.user,
@@ -80,13 +80,13 @@ function getAllReviewsForStore(storeId, storeName, platform) {
     return reviews;
   }
 
-  // TikTok Shop stores
+  // TikTok Shop stores - sample up to 3 categories and 3 products each
   if (TIKTOK_SHOP_STORE_CATEGORIES[storeId]) {
-    const categories = TIKTOK_SHOP_STORE_CATEGORIES[storeId] || [];
+    const categories = (TIKTOK_SHOP_STORE_CATEGORIES[storeId] || []).slice(0, 3);
     categories.forEach(cat => {
-      const prods = getTikTokShopProductsForCategory(storeId, cat.id);
+      const prods = (getTikTokShopProductsForCategory(storeId, cat.id) || []).slice(0, 3);
       prods.forEach(prod => {
-        const comments = generateTikTokShopMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        const comments = generateTikTokShopMockComments(prod, 6);
         comments.forEach(c => {
           reviews.push({
             customerName: c.user,
@@ -104,13 +104,13 @@ function getAllReviewsForStore(storeId, storeName, platform) {
     return reviews;
   }
 
-  // Shopee stores
+  // Shopee stores - sample up to 3 categories and 3 products each
   if (STORE_CATEGORIES[storeId]) {
-    const categories = STORE_CATEGORIES[storeId] || [];
+    const categories = (STORE_CATEGORIES[storeId] || []).slice(0, 3);
     categories.forEach(cat => {
-      const prods = getProductsForCategory(storeId, cat.id, { includeComments: false });
+      const prods = (getProductsForCategory(storeId, cat.id, { includeComments: false }) || []).slice(0, 3);
       prods.forEach(prod => {
-        const comments = generateMockComments(prod, Math.min(prod.reviewCount || 50, 30));
+        const comments = generateMockComments(prod, 6);
         comments.forEach(c => {
           reviews.push({
             customerName: c.userName,
@@ -167,22 +167,32 @@ function generateEvidenceAndRecommendation(riskLevel, posCount, neuCount, negCou
 function generateCustomersForStore(store) {
   const storeReviews = getAllReviewsForStore(store.id, store.name, store.platform);
 
-  // Profiles are scoped to one store. Employees never receive review
-  // statistics or risk signals from another store.
+  // Profiles are scoped to one store. Single-pass aggregation for maximum speed.
   const customerMap = new Map();
-  storeReviews.forEach(review => {
+  for (let i = 0; i < storeReviews.length; i++) {
+    const review = storeReviews[i];
     const name = review.customerName || 'Khách hàng ẩn danh';
     const customerKey = `${store.id}::${name}`;
-    if (!customerMap.has(customerKey)) {
-      customerMap.set(customerKey, {
+    let cust = customerMap.get(customerKey);
+    if (!cust) {
+      cust = {
         customerName: name,
         reviews: [],
         storeName: store.name,
         platform: store.platform,
-      });
+        posCount: 0,
+        neuCount: 0,
+        negCount: 0,
+        ratingSum: 0,
+      };
+      customerMap.set(customerKey, cust);
     }
-    customerMap.get(customerKey).reviews.push(review);
-  });
+    cust.reviews.push(review);
+    if (review.sentiment === 'POS') cust.posCount++;
+    else if (review.sentiment === 'NEU') cust.neuCount++;
+    else if (review.sentiment === 'NEG') cust.negCount++;
+    cust.ratingSum += (review.rating || 0);
+  }
 
   const results = [];
   let idCounter = 1;
@@ -190,11 +200,11 @@ function generateCustomersForStore(store) {
   customerMap.forEach((data) => {
     const customerName = data.customerName;
     const reviews = data.reviews;
-    const posCount = reviews.filter(r => r.sentiment === 'POS').length;
-    const neuCount = reviews.filter(r => r.sentiment === 'NEU').length;
-    const negCount = reviews.filter(r => r.sentiment === 'NEG').length;
+    const posCount = data.posCount;
+    const neuCount = data.neuCount;
+    const negCount = data.negCount;
     const totalReviews = reviews.length;
-    const avgRating = parseFloat((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / Math.max(totalReviews, 1)).toFixed(1));
+    const avgRating = parseFloat((data.ratingSum / Math.max(totalReviews, 1)).toFixed(1));
 
     const riskLevel = computeRiskLevel(posCount, neuCount, negCount);
     const { evidenceReason, aiRecommendation } = generateEvidenceAndRecommendation(riskLevel, posCount, neuCount, negCount);
@@ -240,52 +250,201 @@ function generateCustomersForStore(store) {
   return results;
 }
 
-function generateCustomerStoreGroups() {
-  return getConnectedStoresList().map(store => ({
-    store,
-    customers: generateCustomersForStore(store),
-  }));
-}
-
 export default function CustomersPage() {
   const navigate = useNavigate();
-  const [storeGroups, setStoreGroups] = useState(() => generateCustomerStoreGroups());
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [riskFilter, setRiskFilter] = useState('');
-  const [selectedStoreId, setSelectedStoreId] = useState(null);
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStoreId = searchParams.get('store');
+  const savedStoreId = sessionStorage.getItem('absa_customers_selected_store');
+
+  const [stores, setStores] = useState([]);
+  const [selectedStoreId, setSelectedStoreId] = useState(() => urlStoreId || savedStoreId || null);
+  const [customersCache, setCustomersCache] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState(() => searchParams.get('search') || sessionStorage.getItem('absa_customers_search') || '');
+  const [riskFilter, setRiskFilter] = useState(() => searchParams.get('risk') || sessionStorage.getItem('absa_customers_risk') || '');
+  const [page, setPage] = useState(() => {
+    const p = parseInt(searchParams.get('page') || sessionStorage.getItem('absa_customers_page') || '1', 10);
+    return isNaN(p) || p < 1 ? 1 : p;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const ps = parseInt(sessionStorage.getItem('absa_customers_pagesize') || '10', 10);
+    return isNaN(ps) ? 10 : ps;
+  });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const loadCustomers = useCallback(() => {
-    try {
+  // 1. Initial load: read stores immediately (0ms) and load the targeted or first store
+  useEffect(() => {
+    const list = getConnectedStoresList();
+    setStores(list);
+    if (list.length > 0) {
+      const currentId = urlStoreId || savedStoreId;
+      const targetStore = list.find(s => s.id === currentId) || list[0];
+      setSelectedStoreId(targetStore.id);
+      sessionStorage.setItem('absa_customers_selected_store', targetStore.id);
+
+      // Keep searchParams in sync without polluting history
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.set('store', targetStore.id);
+        return next;
+      }, { replace: true });
+
+      // Compute ONLY for targetStore (takes < 1ms)
       setLoading(true);
-      const nextGroups = generateCustomerStoreGroups();
-      setStoreGroups(nextGroups);
-      setSelectedStoreId(current => current && nextGroups.some(group => group.store.id === current) ? current : null);
-    } catch (err) {
-      console.error(err);
-      setStoreGroups([]);
-      setSelectedStoreId(null);
-    } finally {
+      const timer = setTimeout(() => {
+        const initialCusts = generateCustomersForStore(targetStore);
+        setCustomersCache({ [targetStore.id]: initialCusts });
+        setLoading(false);
+      }, 10);
+      return () => clearTimeout(timer);
+    } else {
       setLoading(false);
     }
   }, []);
 
+  // 2. Select store on-demand (cached = 0ms switch, uncached = 1ms computation)
+  function handleSelectStore(store) {
+    if (selectedStoreId === store.id) return;
+    setSelectedStoreId(store.id);
+    setPage(1);
+    setSelectedCustomer(null);
+    sessionStorage.setItem('absa_customers_selected_store', store.id);
+    sessionStorage.setItem('absa_customers_page', '1');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('store', store.id);
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+
+    if (!customersCache[store.id]) {
+      setLoading(true);
+      setTimeout(() => {
+        const custs = generateCustomersForStore(store);
+        setCustomersCache(prev => ({ ...prev, [store.id]: custs }));
+        setLoading(false);
+      }, 10);
+    }
+  }
+
+  // Continuously record scroll position so returning to this page restores the exact scroll position
   useEffect(() => {
-    const refresh = () => loadCustomers();
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, [loadCustomers]);
+    const container = document.querySelector('.page-content');
+    const handleScroll = () => {
+      const top = container ? container.scrollTop : window.scrollY;
+      sessionStorage.setItem('absa_customers_scroll_top', String(top));
+    };
+
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (container) container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Restore scroll position, store card in view, and highlighted customer row when data loads
+  useEffect(() => {
+    if (!loading && currentCustomers.length > 0) {
+      const savedScrollTop = sessionStorage.getItem('absa_customers_scroll_top');
+      const lastCustId = sessionStorage.getItem('absa_customers_last_customer_id');
+
+      const timer = setTimeout(() => {
+        // 1. Scroll active store card into view horizontally
+        const activeStoreBtn = document.querySelector('.customer-store-card.active');
+        if (activeStoreBtn) {
+          activeStoreBtn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+        }
+
+        // 2. Restore vertical scroll position on both container and window
+        const container = document.querySelector('.page-content');
+        if (savedScrollTop !== null) {
+          const top = parseInt(savedScrollTop, 10);
+          if (!isNaN(top)) {
+            if (container) container.scrollTop = top;
+            window.scrollTo(0, top);
+          }
+        }
+
+        // 3. Highlight and focus customer row if returning from analysis
+        if (lastCustId) {
+          const row = document.getElementById(`customer-row-${lastCustId}`);
+          if (row) {
+            row.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+            row.classList.add('customer-row--returned');
+            setTimeout(() => row.classList.remove('customer-row--returned'), 3500);
+          }
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, selectedStoreId, page]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    sessionStorage.setItem('absa_customers_page', String(newPage));
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(newPage));
+      return next;
+    }, { replace: true });
+  };
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(1);
+    sessionStorage.setItem('absa_customers_search', val);
+    sessionStorage.setItem('absa_customers_page', '1');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('search', val);
+      else next.delete('search');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
+
+  const handleRiskFilterChange = (val) => {
+    setRiskFilter(val);
+    setPage(1);
+    sessionStorage.setItem('absa_customers_risk', val);
+    sessionStorage.setItem('absa_customers_page', '1');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('risk', val);
+      else next.delete('risk');
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
+
+  const handlePageSizeChange = (val) => {
+    setPageSize(val);
+    setPage(1);
+    sessionStorage.setItem('absa_customers_pagesize', String(val));
+    sessionStorage.setItem('absa_customers_page', '1');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('page', '1');
+      return next;
+    }, { replace: true });
+  };
 
   async function handleRiskChange(id, newRisk, e) {
     if (e) e.stopPropagation();
     try {
       await customerService.updateRiskLevel(id, newRisk).catch(() => null);
-      const activeStoreId = selectedStoreId || storeGroups[0]?.store.id;
-      setStoreGroups(prev => prev.map(group => group.store.id === activeStoreId
-        ? { ...group, customers: group.customers.map(c => c.id === id ? { ...c, riskLevel: newRisk } : c) }
-        : group));
+      if (selectedStoreId && customersCache[selectedStoreId]) {
+        setCustomersCache(prev => ({
+          ...prev,
+          [selectedStoreId]: prev[selectedStoreId].map(c => c.id === id ? { ...c, riskLevel: newRisk } : c)
+        }));
+      }
       if (selectedCustomer?.id === id) {
         setSelectedCustomer(prev => prev ? { ...prev, riskLevel: newRisk } : null);
       }
@@ -294,10 +453,11 @@ export default function CustomersPage() {
     }
   }
 
-  const activeStoreId = selectedStoreId || storeGroups[0]?.store.id || null;
-  const selectedGroup = storeGroups.find(group => group.store.id === activeStoreId) || null;
+  const activeStore = stores.find(s => s.id === selectedStoreId) || null;
+  const currentCustomers = (selectedStoreId && customersCache[selectedStoreId]) || [];
+
   const customers = useMemo(() => {
-    let items = selectedGroup?.customers || [];
+    let items = currentCustomers;
     if (riskFilter) items = items.filter(c => c.riskLevel === riskFilter);
     if (search) {
       const q = search.toLowerCase();
@@ -308,21 +468,20 @@ export default function CustomersPage() {
       );
     }
     return items;
-  }, [selectedGroup, riskFilter, search]);
+  }, [currentCustomers, riskFilter, search]);
 
   const totalCustomers = customers.length;
   const vipCount = customers.filter((c) => c.riskLevel === 'VIP').length;
   const riskCount = customers.filter((c) => c.riskLevel === 'POTENTIAL_BOMMER').length;
   const maxReviews = Math.max(1, ...customers.map((c) => c.totalReviewsCount || 0));
 
-  const PAGE_SIZE = 15;
-  const totalPages = Math.ceil(totalCustomers / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(totalCustomers / pageSize) || 1;
 
   const displayedCustomers = useMemo(() => {
     const safePage = Math.min(Math.max(1, page), totalPages);
-    const start = (safePage - 1) * PAGE_SIZE;
-    return customers.slice(start, start + PAGE_SIZE);
-  }, [customers, page, totalPages]);
+    const start = (safePage - 1) * pageSize;
+    return customers.slice(start, start + pageSize);
+  }, [customers, page, totalPages, pageSize]);
 
   return (
     <div className="customers-page">
@@ -340,7 +499,7 @@ export default function CustomersPage() {
             className="input"
             style={{ width: 'auto', minWidth: 180 }}
             value={riskFilter}
-            onChange={(e) => { setRiskFilter(e.target.value); setPage(1); }}
+            onChange={(e) => handleRiskFilterChange(e.target.value)}
           >
             <option value="">Tất cả mức rủi ro ({totalCustomers})</option>
             <option value="NORMAL">🟢 Bình thường (NORMAL)</option>
@@ -354,7 +513,7 @@ export default function CustomersPage() {
               className="customers-search__input"
               placeholder="Tìm tên KH, Mã sàn, Store..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
         </div>
@@ -392,24 +551,28 @@ export default function CustomersPage() {
             <h2>Cửa hàng đã kết nối</h2>
             <p>Chọn một cửa hàng để xem khách hàng đã mua hàng và đánh giá cửa hàng đó.</p>
           </div>
-          {selectedGroup && <span className="customer-store-groups__scope">Phạm vi: {selectedGroup.store.name}</span>}
+          {activeStore && <span className="customer-store-groups__scope">Phạm vi: {activeStore.name}</span>}
         </div>
-        {storeGroups.length === 0 ? (
+        {stores.length === 0 ? (
           <div className="customer-store-groups__empty">Chưa có cửa hàng nào được kết nối. Dữ liệu khách hàng đang được ẩn.</div>
         ) : (
           <div className="customer-store-groups__list">
-            {storeGroups.map(({ store, customers: storeCustomers }) => (
-              <button
-                type="button"
-                key={store.id}
-                className={`customer-store-card ${activeStoreId === store.id ? 'active' : ''}`}
-                onClick={() => { setSelectedStoreId(store.id); setPage(1); setSelectedCustomer(null); }}
-              >
-                <span className="customer-store-card__platform">{store.platform}</span>
-                <strong>{store.name}</strong>
-                <span>{storeCustomers.length} khách hàng có đánh giá</span>
-              </button>
-            ))}
+            {stores.map((store) => {
+              const cached = customersCache[store.id];
+              const countLabel = cached ? `${cached.length} khách hàng đã phân tích` : `${store.reviewCount || 100}+ đánh giá`;
+              return (
+                <button
+                  type="button"
+                  key={store.id}
+                  className={`customer-store-card ${selectedStoreId === store.id ? 'active' : ''}`}
+                  onClick={() => handleSelectStore(store)}
+                >
+                  <span className="customer-store-card__platform">{store.platform}</span>
+                  <strong>{store.name}</strong>
+                  <span>{countLabel}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </section>
@@ -417,11 +580,26 @@ export default function CustomersPage() {
       {/* Table */}
       <div className="customers-table-wrapper">
         {loading ? (
-          <div className="empty-state">Đang tải danh sách & dữ liệu rủi ro khách hàng...</div>
-        ) : !selectedGroup ? (
+          <div style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div className="skeleton" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+              <div className="skeleton" style={{ width: 260, height: 16 }} />
+            </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--surface-100)' }}>
+                <div className="skeleton" style={{ width: 140, height: 18 }} />
+                <div className="skeleton" style={{ width: 110, height: 16 }} />
+                <div className="skeleton" style={{ width: 130, height: 16 }} />
+                <div className="skeleton" style={{ width: 80, height: 16 }} />
+                <div className="skeleton" style={{ flex: 1, height: 18 }} />
+                <div className="skeleton" style={{ width: 64, height: 28, borderRadius: 6 }} />
+              </div>
+            ))}
+          </div>
+        ) : !activeStore ? (
           <div className="empty-state">
             <Store size={36} />
-            <p>{storeGroups.length ? 'Hãy chọn một cửa hàng để xem danh sách khách hàng.' : 'Kết nối cửa hàng để bắt đầu phân tích khách hàng.'}</p>
+            <p>{stores.length ? 'Hãy chọn một cửa hàng để xem danh sách khách hàng.' : 'Kết nối cửa hàng để bắt đầu phân tích khách hàng.'}</p>
           </div>
         ) : displayedCustomers.length === 0 ? (
           <div className="empty-state">
@@ -449,6 +627,7 @@ export default function CustomersPage() {
                 return (
                   <tr 
                     key={c.id} 
+                    id={`customer-row-${c.id}`}
                     onClick={() => setSelectedCustomer(c)}
                     className={selectedCustomer?.id === c.id ? 'active' : ''}
                   >
@@ -501,7 +680,21 @@ export default function CustomersPage() {
                           type="button"
                           className="btn btn--secondary btn--sm"
                           style={{ fontSize: 11, padding: '4px 8px' }}
-                          onClick={() => navigate(`/customers/${c.id}/analysis`, { state: { customer: c } })}
+                          onClick={() => {
+                            const container = document.querySelector('.page-content');
+                            const scrollY = container ? container.scrollTop : window.scrollY;
+                            sessionStorage.setItem('absa_customers_scroll_top', String(scrollY));
+                            sessionStorage.setItem('absa_customers_last_customer_id', c.id);
+                            navigate(`/customers/${c.id}/analysis`, { 
+                              state: { 
+                                customer: c, 
+                                returnStoreId: selectedStoreId, 
+                                returnPage: page,
+                                returnScrollTop: scrollY,
+                                returnCustomerId: c.id
+                              } 
+                            });
+                          }}
                           aria-label={`Xem phân tích ${c.displayName || 'khách hàng'}`}
                         >
                           <BarChart3 size={12} /> Phân tích
@@ -524,11 +717,30 @@ export default function CustomersPage() {
           </table>
         )}
 
-        {totalPages > 1 && (
+        {totalCustomers > 0 && (
           <div className="customers-pagination">
-            <span className="customers-pagination__info">Trang {page}/{totalPages} · {totalCustomers} khách hàng</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span className="customers-pagination__info">
+                Hiển thị {Math.min((page - 1) * pageSize + 1, totalCustomers)} - {Math.min(page * pageSize, totalCustomers)} trên {totalCustomers} khách hàng · Trang {page}/{totalPages}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--surface-500)' }}>
+                <span>Hiển thị:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="input"
+                  style={{ width: 'auto', padding: '3px 8px', fontSize: 12, height: 28, background: 'var(--surface-0)' }}
+                >
+                  <option value={10}>10 / trang</option>
+                  <option value={20}>20 / trang</option>
+                  <option value={50}>50 / trang</option>
+                </select>
+              </div>
+            </div>
+
             <div className="customers-pagination__controls">
-              <button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
+              <button disabled={page <= 1} onClick={() => handlePageChange(1)} title="Trang đầu">«</button>
+              <button disabled={page <= 1} onClick={() => handlePageChange(page - 1)} title="Trang trước">‹</button>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                 let p;
                 if (totalPages <= 5) p = i + 1;
@@ -536,10 +748,11 @@ export default function CustomersPage() {
                 else if (page >= totalPages - 2) p = totalPages - 4 + i;
                 else p = page - 2 + i;
                 return (
-                  <button key={p} className={p === page ? 'active' : ''} onClick={() => setPage(p)}>{p}</button>
+                  <button key={p} className={p === page ? 'active' : ''} onClick={() => handlePageChange(p)}>{p}</button>
                 );
               })}
-              <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button>
+              <button disabled={page >= totalPages} onClick={() => handlePageChange(page + 1)} title="Trang kế">›</button>
+              <button disabled={page >= totalPages} onClick={() => handlePageChange(totalPages)} title="Trang cuối">»</button>
             </div>
           </div>
         )}
