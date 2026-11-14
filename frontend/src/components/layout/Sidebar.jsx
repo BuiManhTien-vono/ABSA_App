@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import {
   BarChart2,
   FileText,
@@ -45,13 +45,24 @@ function getInitials(name) {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // ignore
+    }
+    navigate('/login', { replace: true });
+  };
+
   const displayName = user?.fullName
     || user?.full_name
     || user?.name
     || user?.email?.split('@')[0]
-    || 'Nguyễn Thanh';
-  const role = ROLE_LABELS[user?.role] || user?.role || 'Quản lý cửa hàng';
-  const initials = getInitials(displayName) || 'NT';
+    || 'Tài khoản';
+  const role = ROLE_LABELS[user?.role] || user?.role || 'Người dùng';
+  const initials = getInitials(displayName) || 'U';
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -100,20 +111,43 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-user-avatar" aria-hidden="true">{initials}</div>
-        <div className="sidebar-user-copy">
-          <strong>{displayName}</strong>
-          <span>{role}</span>
-        </div>
-        <button
-          onClick={logout}
-          className="sidebar-logout-button"
-          type="button"
-          aria-label="Đăng xuất"
-          title="Đăng xuất"
-        >
-          <LogOut size={15} strokeWidth={1.7} />
-        </button>
+        {user ? (
+          <>
+            <div className="sidebar-user-avatar" aria-hidden="true">{initials}</div>
+            <div className="sidebar-user-copy">
+              <strong>{displayName}</strong>
+              <span>{role}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="sidebar-logout-button"
+              type="button"
+              aria-label="Đăng xuất"
+              title="Đăng xuất"
+            >
+              <LogOut size={15} strokeWidth={1.7} />
+            </button>
+          </>
+        ) : (
+          <Link
+            to="/login"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              padding: '8px 12px',
+              background: '#4f46e5',
+              color: '#ffffff',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            Đăng nhập
+          </Link>
+        )}
       </div>
     </aside>
   );

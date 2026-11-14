@@ -47,8 +47,32 @@ export default function ExcelUploadModal({ isOpen, onClose, onSuccess }) {
 
   const handleDownloadSample = async () => {
     try {
-      const blob = await inferenceService.downloadTemplate();
-      const url = window.URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob], { type: 'text/csv' }));
+      const blob = await inferenceService.downloadTemplate().catch(() => null);
+      if (blob && blob.size > 0) {
+        const url = window.URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob], { type: 'text/csv' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'Mau_Danh_Gia_San_Pham.csv');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+      throw new Error('Fallback to local template');
+    } catch {
+      // Local fallback CSV template with UTF-8 BOM for perfect Excel Vietnamese display
+      const sampleCsv = '\uFEFF' + [
+        'ReviewText,Rating,ProductName,StoreName,Platform',
+        '"Vải áo dày dặn, mặc mát và form dáng rất đẹp. Giao hàng nhanh!",5,"Áo Polo Nam Thoáng Khí","Thời Trang Higen Official","Shopee"',
+        '"Hàng nhận bị móp góc hộp, đóng gói sơ sài, đề nghị shop cải thiện",2,"Tai Nghe Bluetooth True Wireless","Điện Tử Tech Store","Shopee"',
+        '"Chất lượng tạm ổn trong tầm giá, tuy nhiên chỉ thừa hơi nhiều",3,"Quần Jean Nam Co Giãn","Thời Trang Nam Urban","Lazada"',
+        '"Sản phẩm dùng tốt, pin trâu đúng như mô tả của shop. Sẽ ủng hộ tiếp!",5,"Đồng Hồ Thông Minh Sport V8","Phụ Kiện Số Pro","TikTok Shop"',
+        '"Giao sai màu áo, nhắn tin CSKH không ai phản hồi giải quyết!",1,"Áo Thun Cotton Oversize","Thời Trang Nữ Bella","Shopee"'
+      ].join('\r\n');
+
+      const blob = new Blob([sampleCsv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'Mau_Danh_Gia_San_Pham.csv');
@@ -56,8 +80,6 @@ export default function ExcelUploadModal({ isOpen, onClose, onSuccess }) {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Lỗi tải file mẫu:', err);
     }
   };
 

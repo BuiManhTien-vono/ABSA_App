@@ -18,11 +18,29 @@ import TemplatesPage from './pages/TemplatesPage';
 import TicketsPage from './pages/TicketsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import MainLayout from './components/layout/MainLayout';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/auth';
 
 function RequireAuth() {
+  const { user } = useAuth();
+  const token = localStorage.getItem('absa_token');
+
+  if (!user && !token) {
+    return <Navigate to="/login" replace />;
+  }
+
   return <Outlet />;
+}
+
+function FallbackRoute() {
+  const token = localStorage.getItem('absa_token');
+  const user = localStorage.getItem('absa_user');
+  if (token || user) {
+    return <Navigate to="/overview" replace />;
+  }
+  return <Navigate to="/login" replace />;
 }
 
 export default function App() {
@@ -52,9 +70,11 @@ export default function App() {
               <Route path="/tickets" element={<TicketsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/reports" element={<Navigate to="/overview" replace />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<FallbackRoute />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
