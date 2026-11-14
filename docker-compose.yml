@@ -1,72 +1,72 @@
-version: "3.9"
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: feedbackai-postgres
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: higen-sqlserver
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: feedbackai
-      POSTGRES_USER: feedbackai
-      POSTGRES_PASSWORD: feedbackai123
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=HigenAbsa@2026!
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - feedbackai-network
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'HigenAbsa@2026!' -C -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'HigenAbsa@2026!' -Q 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
 
-  ai-service:
-    build:
-      context: ./ai-service
-      dockerfile: Dockerfile
-    container_name: feedbackai-ai-service
-    ports:
-      - "8000:8000"
-    environment:
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-changeme}
-      ABSA_HOST: "0.0.0.0"
-      ABSA_PORT: "8000"
-    networks:
-      - feedbackai-network
-
-  backend-java:
-    build:
-      context: ./backend-java
-      dockerfile: Dockerfile
-    container_name: feedbackai-backend-java
-    ports:
-      - "8080:8080"
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: higen-db-init
     depends_on:
-      - postgres
-      - ai-service
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./backend-dotnet/database/01_init_schemas_and_tables.sql:/init.sql:ro
+    command: >
+      bash -c "
+        echo 'Dang cho SQL Server san sang de khoi tao schema HigenAbsaDb...'
+        for i in {1..30}; do
+          (/opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'HigenAbsa@2026!' -C -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'HigenAbsa@2026!' -i /init.sql) && echo 'Khoi tao HigenAbsaDb thanh cong!' && exit 0 || sleep 2
+        done
+        echo 'Loi ket noi khoi tao DB'
+        exit 1
+      "
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend-dotnet
+      dockerfile: Dockerfile
+    image: higen-backend:latest
+    container_name: higen-backend
+    restart: unless-stopped
+    ports:
+      - "5058:5058"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: feedbackai
-      DB_USER: feedbackai
-      DB_PASSWORD: feedbackai123
-      AI_SERVICE_URL: http://ai-service:8000
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-changeme}
-      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production-must-be-at-least-256-bits-long!!}
-      FRONTEND_URL: http://172.20.10.4:5173
-    networks:
-      - feedbackai-network
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=HigenAbsaDb;User Id=sa;Password=HigenAbsa@2026!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Absa__ModelDir=/app/models
+    volumes:
+      - ./ai-service/models/visobert_absa_v8:/app/models:ro
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: feedbackai-frontend
+    image: higen-frontend:latest
+    container_name: higen-frontend
+    restart: unless-stopped
     ports:
       - "5173:80"
     depends_on:
-      - backend-java
-    networks:
-      - feedbackai-network
+      - backend
 
 volumes:
-  pgdata:
-
-networks:
-  feedbackai-network:
-    driver: bridge
+  mssql_data:
