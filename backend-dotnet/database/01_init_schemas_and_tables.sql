@@ -4,6 +4,12 @@
 -- Hệ quản trị CSDL: Microsoft SQL Server
 -- =============================================================================
 
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'HigenAbsaDb')
+BEGIN
+    CREATE DATABASE [HigenAbsaDb];
+END
+GO
+
 USE [HigenAbsaDb];
 GO
 
@@ -323,11 +329,11 @@ GO
 -- SEED INITIAL DATA
 -- =============================================================================
 
--- 1. Users
+-- 1. Users (Mật khẩu mặc định: Password123!)
 INSERT INTO security.SystemUsers (Id, Email, PasswordHash, FullName, PhoneNumber, Role, IsActive, CreatedAt)
 VALUES 
-    ('11111111-1111-1111-1111-111111111111', 'admin@higen.vn', '$2a$11$0dY6q1mQhW3m1Fh.ZlhBCOKsqJgW7fKqV4Fz10FzXp9u9Xl8iGqy.', N'System Administrator', '0901234567', 'ADMIN', 1, SYSDATETIMEOFFSET()),
-    ('11111111-1111-1111-1111-111111111112', 'admin@higen-absa.com', '$2a$11$0dY6q1mQhW3m1Fh.ZlhBCOKsqJgW7fKqV4Fz10FzXp9u9Xl8iGqy.', N'HIGEN Administrator', '0987654321', 'ADMIN', 1, SYSDATETIMEOFFSET());
+    ('11111111-1111-1111-1111-111111111111', 'admin@higen.vn', '$2a$11$p7qoCzngODNWT763hFCg8eNwwkgzJRjVdDRwsCx3BtAjixR5sJFTu', N'System Administrator', '0901234567', 'ADMIN', 1, SYSDATETIMEOFFSET()),
+    ('11111111-1111-1111-1111-111111111112', 'admin@higen-absa.com', '$2a$11$p7qoCzngODNWT763hFCg8eNwwkgzJRjVdDRwsCx3BtAjixR5sJFTu', N'HIGEN Administrator', '0987654321', 'ADMIN', 1, SYSDATETIMEOFFSET());
 
 -- 2. Platforms
 INSERT INTO coresync.Platforms (Id, Code, Name, ApiBaseUrl, IsActive, CreatedAt)

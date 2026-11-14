@@ -126,6 +126,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Chuyển hướng trang chủ về Swagger UI
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
 // Endpoint kiểm tra trạng thái kiến trúc Modular Monolith và 5 Schema độc lập
 app.MapGet("/api/health", () => Results.Ok(new
 {
