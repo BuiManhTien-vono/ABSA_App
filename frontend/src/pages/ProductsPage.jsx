@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Package, Store, ChevronRight, ShoppingBag, BarChart3 } from 'lucide-react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Package, Store, ChevronRight, ShoppingBag, BarChart3, Search, X, Star } from 'lucide-react';
 import { SHOPEE_STORES, STORE_CATEGORIES, getProductsForCategory } from '../data/shopeeData';
 import { LAZADA_STORES, LAZADA_STORE_CATEGORIES, getLazadaProductsForCategory } from '../data/lazadaData';
 import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES, getTikTokShopProductsForCategory } from '../data/tiktokShopData';
@@ -45,7 +45,46 @@ const PLATFORM_INFO = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = (searchParams.get('search') || '').trim();
   const connectedPlatforms = useMemo(() => getConnectedPlatforms(), []);
+
+  // Search across all platforms and products if searchQuery is provided
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    const query = searchQuery.toLowerCase();
+    const results = [];
+
+    // Collect products from all platforms
+    Object.entries(PLATFORM_INFO).forEach(([pCode, pInfo]) => {
+      const stores = pInfo.getStores();
+      const categories = pInfo.getCategories();
+
+      stores.forEach((store) => {
+        const storeCats = categories[store.id] || [];
+        storeCats.forEach((cat) => {
+          const prods = pInfo.getProducts(store.id, cat.id);
+          prods.forEach((prod) => {
+            const matchName = prod.name?.toLowerCase().includes(query);
+            const matchStore = store.name?.toLowerCase().includes(query);
+            const matchCat = cat.name?.toLowerCase().includes(query);
+            if (matchName || matchStore || matchCat) {
+              results.push({
+                ...prod,
+                platformCode: pCode,
+                platformName: pInfo.name,
+                platformIcon: pInfo.icon,
+                storeName: store.name,
+                categoryName: cat.name,
+              });
+            }
+          });
+        });
+      });
+    });
+
+    return results;
+  }, [searchQuery]);
 
   const connectedList = useMemo(() => {
     return Object.entries(connectedPlatforms)
@@ -130,14 +169,102 @@ export default function ProductsPage() {
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-          Quản lý Sản phẩm
-        </h1>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
-          Theo dõi sản phẩm và tổng hợp cảm xúc khách hàng từ các sàn TMĐT đã kết nối
-        </p>
+      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: '#0f172a' }}>
+            Quản lý Sản phẩm
+          </h1>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+            Theo dõi sản phẩm và tổng hợp cảm xúc khách hàng từ các sàn TMĐT đã kết nối
+          </p>
+        </div>
+
+        {searchQuery && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: '#e0e7ff', color: '#4338ca', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+          }}>
+            <Search size={14} />
+            <span>Kết quả tìm kiếm cho: "{searchQuery}" ({searchResults.length})</span>
+            <button
+              type="button"
+              onClick={() => setSearchParams({})}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: '#4338ca' }}
+              title="Xóa tìm kiếm"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* When search is active, show search results */}
+      {searchQuery ? (
+        <div style={{ marginBottom: '36px' }}>
+          {searchResults.length === 0 ? (
+            <div style={{
+              background: '#fff', padding: '48px 24px', textAlign: 'center', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#64748b'
+            }}>
+              <Package size={40} style={{ color: '#cbd5e1', marginBottom: '8px' }} />
+              <h3 style={{ fontSize: '15px', color: '#334155', margin: '0 0 6px' }}>Không tìm thấy sản phẩm nào</h3>
+              <p style={{ fontSize: '13px', margin: 0 }}>Vui lòng thử lại với từ khóa khác hoặc xóa bộ lọc tìm kiếm.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              {searchResults.map((prod) => (
+                <div
+                  key={`${prod.platformCode}-${prod.id}`}
+                  onClick={() => navigate(`/products/${prod.platformCode}/${prod.id}`)}
+                  style={{
+                    background: '#fff',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 180ms ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.07)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                    <img
+                      src={prod.image}
+                      alt={prod.name}
+                      style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #f1f5f9' }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{
+                        display: 'inline-block', fontSize: '10.5px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px',
+                        background: prod.platformCode === 'shopee' ? '#fff1f0' : prod.platformCode === 'lazada' ? '#eff6ff' : '#f8fafc',
+                        color: prod.platformCode === 'shopee' ? '#e11d48' : prod.platformCode === 'lazada' ? '#1d4ed8' : '#0f172a',
+                        marginBottom: '4px'
+                      }}>
+                        {prod.platformIcon} {prod.platformName}
+                      </span>
+                      <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {prod.name}
+                      </h4>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                    <span>{prod.storeName}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: 600, color: '#d97706' }}>
+                      <Star size={13} fill="#d97706" /> {prod.rating} ({prod.reviewCount})
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {/* Summary Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '32px' }}>
