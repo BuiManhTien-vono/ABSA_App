@@ -1,0 +1,258 @@
+using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
+using HigenAbsa.Modules.Security.Application.DTOs;
+using HigenAbsa.UnitTests.Modules.Security.Fixtures;
+
+namespace HigenAbsa.UnitTests.Modules.Security.Services;
+
+/// <summary>
+/// Bộ kịch bản kiểm thử luồng Xác thực & Quản lý phiên (Đăng ký, Đăng nhập, Refresh Token, Đăng xuất).
+/// Tuân thủ cấu trúc AAA (Arrange - Act - Assert) của Microsoft và tiêu chuẩn bảo mật OWASP WSTG v4.2 (Mục 4.4).
+/// </summary>
+public class AuthenticationTests
+{
+    [Fact]
+    public async Task RegisterAsync_ValidNewUser_CreatesAccountWithHashedPasswordAndTokens()
+    {
+        // 1. Arrange (Chuẩn bị): Tạo thông tin đăng ký hợp lệ có khoảng trắng và chữ hoa để kiểm tra chuẩn hóa
+        using var context = new SecurityTestContext();
+        var request = new RegisterRequest
+        {
+            Email = "  ShopOwner@Higen.vn ",
+            Password = "Password@123",
+            FullName = "  Nguyễn Văn Chủ Shop  ",
+            PhoneNumber = " 0901234567 "
+        };
+
+        // 2. Act (Thực thi): Gọi hàm đăng ký tài khoản mới
+        var response = await context.AuthService.RegisterAsync(request, "127.0.0.1");
+
+        // 3. Assert (Kiểm chứng): Tài khoản được chuẩn hóa dữ liệu, băm mật khẩu BCrypt và cấp đủ Token
+        Assert.NotNull(response);
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
+        Assert.Equal("Bearer", response.TokenType);
+        Assert.Equal("shopowner@higen.vn", response.User.Email);
+        Assert.Equal("Nguyễn Văn Chủ Shop", response.User.FullName);
+        Assert.Equal("STORE_MANAGER", response.User.Role);
+        Assert.True(response.User.IsActive);
+
+        var savedUser = await context.DbContext.SystemUsers.FirstOrDefaultAsync(u => u.Email == "shopowner@higen.vn");
+        Assert.NotNull(savedUser);
+        Assert.NotEqual("Password@123", savedUser.PasswordHash);
+        Assert.True(BCrypt.Net.BCrypt.Verify("Password@123", savedUser.PasswordHash));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_DuplicateEmailDifferentCase_ThrowsInvalidOperationException()
+    {
+        // 1. Arrange (Chuẩn bị): Đăng ký sẵn một tài khoản với email chữ hoa-thường lẫn lộn
+        using var context = new SecurityTestContext();
+        await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "User@Shop.vn",
+            Password = "Password@123",
+            FullName = "Người Dùng Một"
+        }, "127.0.0.1");
+
+        var duplicateRequest = new RegisterRequest
+        {
+            Email = "user@shop.vn",
+            Password = "OtherPassword@456",
+            FullName = "Người Dùng Hai"
+        };
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Đăng ký lại cùng email phải bị từ chối
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            context.AuthService.RegisterAsync(duplicateRequest, "127.0.0.1"));
+
+        Assert.Equal("Email address is already registered.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ValidCredentials_ReturnsAccessAndRefreshTokens()
+    {
+        // 1. Arrange (Chuẩn bị): Tạo sẵn tài khoản hợp lệ trong hệ thống
+        using var context = new SecurityTestContext();
+        await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "tester@higen.vn",
+            Password = "Secret@123",
+            FullName = "Tester Nội Bộ"
+        }, "127.0.0.1");
+
+        var loginRequest = new LoginRequest
+        {
+            Email = "  TESTER@Higen.vn ",
+            Password = "Secret@123"
+        };
+
+        // 2. Act (Thực thi): Đăng nhập từ địa chỉ IP 192.168.1.50
+        var response = await context.AuthService.LoginAsync(loginRequest, "192.168.1.50");
+
+        // 3. Assert (Kiểm chứng): Trả về cặp token mới và lưu vết Refresh Token kèm IP trong CSDL
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
+        Assert.Equal("Bearer", response.TokenType);
+        Assert.Equal(3600, response.ExpiresInSeconds);
+        Assert.Equal("tester@higen.vn", response.User.Email);
+
+        var storedRefreshToken = await context.DbContext.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == response.RefreshToken);
+        Assert.NotNull(storedRefreshToken);
+        Assert.Equal("192.168.1.50", storedRefreshToken.CreatedByIp);
+        Assert.False(storedRefreshToken.IsRevoked);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WrongPassword_ThrowsUnauthorizedWithGenericMessage()
+    {
+        // 1. Arrange (Chuẩn bị): Tài khoản tồn tại nhưng nhập sai mật khẩu (OWASP WSTG-ATHN-02 / Chống dò tài khoản)
+        using var context = new SecurityTestContext();
+        await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "victim@higen.vn",
+            Password = "CorrectPassword@123",
+            FullName = "Tài Khoản Thử"
+        }, "127.0.0.1");
+
+        var wrongPasswordLogin = new LoginRequest
+        {
+            Email = "victim@higen.vn",
+            Password = "WrongPassword@999"
+        };
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Báo lỗi chung chung để kẻ tấn công không biết email có tồn tại hay không
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            context.AuthService.LoginAsync(wrongPasswordLogin, "127.0.0.1"));
+
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_NonExistentEmail_ThrowsUnauthorizedWithSameGenericMessage()
+    {
+        // 1. Arrange (Chuẩn bị): Đăng nhập bằng email chưa từng tồn tại (Chống Account Enumeration)
+        using var context = new SecurityTestContext();
+        var unknownLogin = new LoginRequest
+        {
+            Email = "notfound@higen.vn",
+            Password = "AnyPassword@123"
+        };
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Thông báo lỗi phải giống hệt trường hợp sai mật khẩu
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            context.AuthService.LoginAsync(unknownLogin, "127.0.0.1"));
+
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_DeactivatedAccount_ThrowsUnauthorizedAccessException()
+    {
+        // 1. Arrange (Chuẩn bị): Tài khoản đã bị vô hiệu hóa (OWASP WSTG-ATHN-03 / Account Lockout)
+        using var context = new SecurityTestContext();
+        var registered = await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "locked@higen.vn",
+            Password = "Password@123",
+            FullName = "Tài Khoản Bị Khóa"
+        }, "127.0.0.1");
+
+        var userInDb = await context.DbContext.SystemUsers.FindAsync(registered.User.Id);
+        Assert.NotNull(userInDb);
+        userInDb.IsActive = false;
+        await context.DbContext.SaveChangesAsync();
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Dù nhập đúng mật khẩu vẫn không được phép đăng nhập
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            context.AuthService.LoginAsync(new LoginRequest
+            {
+                Email = "locked@higen.vn",
+                Password = "Password@123"
+            }, "127.0.0.1"));
+
+        Assert.Equal("Account is deactivated. Contact administrator.", exception.Message);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ValidActiveToken_RotatesTokenAndRevokesOldToken()
+    {
+        // 1. Arrange (Chuẩn bị): Đăng ký người dùng để lấy Refresh Token ban đầu
+        using var context = new SecurityTestContext();
+        var initialAuth = await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "rotate@higen.vn",
+            Password = "Password@123",
+            FullName = "Người Dùng Xoay Vòng"
+        }, "10.0.0.1");
+
+        // 2. Act (Thực thi): Gửi Refresh Token hiện tại để xin cặp Token mới (Token Rotation)
+        var rotatedAuth = await context.AuthService.RefreshTokenAsync(initialAuth.RefreshToken, "10.0.0.2");
+
+        // 3. Assert (Kiểm chứng): Token cũ phải bị thu hồi ngay và trỏ sang Token mới
+        Assert.False(string.IsNullOrWhiteSpace(rotatedAuth.AccessToken));
+        Assert.NotEqual(initialAuth.RefreshToken, rotatedAuth.RefreshToken);
+
+        var oldTokenInDb = await context.DbContext.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == initialAuth.RefreshToken);
+        var newTokenInDb = await context.DbContext.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == rotatedAuth.RefreshToken);
+
+        Assert.NotNull(oldTokenInDb);
+        Assert.True(oldTokenInDb.IsRevoked);
+        Assert.Equal("10.0.0.2", oldTokenInDb.RevokedByIp);
+        Assert.Equal(rotatedAuth.RefreshToken, oldTokenInDb.ReplacedByToken);
+
+        Assert.NotNull(newTokenInDb);
+        Assert.False(newTokenInDb.IsRevoked);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_AlreadyRevokedToken_ThrowsUnauthorizedAccessException()
+    {
+        // 1. Arrange (Chuẩn bị): Xoay vòng token 1 lần để token cũ chuyển sang trạng thái đã thu hồi
+        using var context = new SecurityTestContext();
+        var initialAuth = await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "reuse@higen.vn",
+            Password = "Password@123",
+            FullName = "Kiểm Tra Tái Sử Dụng"
+        }, "10.0.0.1");
+
+        await context.AuthService.RefreshTokenAsync(initialAuth.RefreshToken, "10.0.0.2");
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Cố tình dùng lại token cũ phải bị chặn với UnauthorizedAccessException
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            context.AuthService.RefreshTokenAsync(initialAuth.RefreshToken, "10.0.0.99"));
+
+        Assert.Equal("Invalid or expired refresh token.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LogoutAsync_ExistingRefreshToken_MarksTokenAsRevoked()
+    {
+        // 1. Arrange (Chuẩn bị): Người dùng đã đăng nhập và đang giữ Refresh Token hợp lệ
+        using var context = new SecurityTestContext();
+        var auth = await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "logout@higen.vn",
+            Password = "Password@123",
+            FullName = "Người Dùng Đăng Xuất"
+        }, "127.0.0.1");
+
+        // 2. Act (Thực thi): Gọi đăng xuất với Refresh Token đang dùng
+        var result = await context.AuthService.LogoutAsync(auth.RefreshToken, "172.16.0.5");
+
+        // 3. Assert (Kiểm chứng): Trả về true và đánh dấu thu hồi token kèm thời điểm + IP đăng xuất
+        Assert.True(result);
+
+        var revokedToken = await context.DbContext.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == auth.RefreshToken);
+        Assert.NotNull(revokedToken);
+        Assert.True(revokedToken.IsRevoked);
+        Assert.NotNull(revokedToken.RevokedAt);
+        Assert.Equal("172.16.0.5", revokedToken.RevokedByIp);
+    }
+}
+
