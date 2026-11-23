@@ -254,5 +254,98 @@ public class AuthenticationTests
         Assert.NotNull(revokedToken.RevokedAt);
         Assert.Equal("172.16.0.5", revokedToken.RevokedByIp);
     }
+
+    [Fact]
+    public async Task RegisterAsync_ClientSuppliesAdminRole_EnforcesDefaultStoreManagerAndPreventsPrivilegeEscalation()
+    {
+        // [TC-BE-SEC-16] Chuẩn ISO/IEC 25010:2023 (Security - Integrity) & OWASP WSTG-ATHZ-02 (Privilege Escalation)
+        // 1. Arrange (Chuẩn bị): Người dùng bên ngoài cố tình truyền Role = "ADMIN" vào payload đăng ký công khai
+        using var context = new SecurityTestContext();
+        var maliciousRequest = new RegisterRequest
+        {
+            Email = "attacker@higen.vn",
+            Password = "Password@123",
+            FullName = "Kẻ Tấn Công Leo Thang Đặc Quyền",
+            Role = "ADMIN"
+        };
+
+        // 2. Act (Thực thi): Gọi hàm đăng ký công khai
+        var response = await context.AuthService.RegisterAsync(maliciousRequest, "127.0.0.1");
+
+        // 3. Assert (Kiểm chứng): Hệ thống bắt buộc gán quyền mặc định STORE_MANAGER, không cho phép tự phong ADMIN
+        Assert.Equal("STORE_MANAGER", response.User.Role);
+        var savedUser = await context.DbContext.SystemUsers.FirstAsync(u => u.Email == "attacker@higen.vn");
+        Assert.Equal("STORE_MANAGER", savedUser.Role);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_DuplicateEmailWithSurroundingWhitespace_ThrowsInvalidOperationException()
+    {
+        // [TC-BE-SEC-17] Chuẩn ISO/IEC/IEEE 29119-4 (Boundary / Input Normalization)
+        // 1. Arrange (Chuẩn bị): Đăng ký sẵn tài khoản chuẩn đã được Trim()
+        using var context = new SecurityTestContext();
+        await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "clean@shop.vn",
+            Password = "Password@123",
+            FullName = "Tài Khoản Gốc"
+        }, "127.0.0.1");
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Đăng ký lại cùng email nhưng thêm khoảng trắng ở đầu/cuối phải bị chặn
+        var duplicateWithSpaces = new RegisterRequest
+        {
+            Email = "   CLEAN@shop.vn   ",
+            Password = "Password@456",
+            FullName = "Tài Khoản Trùng Lặp Có Dấu Cách"
+        };
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            context.AuthService.RegisterAsync(duplicateWithSpaces, "127.0.0.1"));
+
+        Assert.Equal("Email address is already registered.", exception.Message);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ReusingRevokedToken_RevokesDescendantActiveTokensForUser()
+    {
+        // [TC-BE-SEC-18] Chuẩn IETF OAuth 2.0 Security BCP (Refresh Token Replay Detection) & ISO 25010 (Resistance)
+        // 1. Arrange (Chuẩn bị): Người dùng đăng nhập rồi xoay vòng sang token mới (token cũ đã bị thu hồi)
+        using var context = new SecurityTestContext();
+        var initialAuth = await context.AuthService.RegisterAsync(new RegisterRequest
+        {
+            Email = "tokenfamily@higen.vn",
+            Password = "Password@123",
+            FullName = "Kiểm Tra Chuỗi Token"
+        }, "10.0.0.1");
+
+        var rotatedAuth = await context.AuthService.RefreshTokenAsync(initialAuth.RefreshToken, "10.0.0.2");
+
+        // 2. Act (Thực thi): Kẻ tấn công đem RefreshToken cũ (đã bị thu hồi) ra tái sử dụng
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            context.AuthService.RefreshTokenAsync(initialAuth.RefreshToken, "10.0.0.99"));
+
+        // 3. Assert (Kiểm chứng): Toàn bộ RefreshToken đang hoạt động trong gia đình token của user đó phải bị thu hồi khẩn cấp
+        var descendantToken = await context.DbContext.RefreshTokens
+            .FirstAsync(t => t.Token == rotatedAuth.RefreshToken);
+        Assert.True(descendantToken.IsRevoked);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_PasswordShorterThanMinimumBoundary_ThrowsArgumentOrInvalidOperationException()
+    {
+        // [TC-BE-SEC-19] Chuẩn ISO/IEC/IEEE 29119-4 (Boundary Value Analysis: độ dài mật khẩu = 5 < ngưỡng tối thiểu 6)
+        // 1. Arrange (Chuẩn bị): Tạo yêu cầu đăng ký với mật khẩu 5 ký tự (sát dưới biên 6 ký tự)
+        using var context = new SecurityTestContext();
+        var weakPasswordRequest = new RegisterRequest
+        {
+            Email = "boundary5@higen.vn",
+            Password = "12345",
+            FullName = "Kiểm Thử Giá Trị Biên Mật Khẩu"
+        };
+
+        // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Tầng dịch vụ phải từ chối mật khẩu dưới 6 ký tự
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            context.AuthService.RegisterAsync(weakPasswordRequest, "127.0.0.1"));
+    }
 }
 

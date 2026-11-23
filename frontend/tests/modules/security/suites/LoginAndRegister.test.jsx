@@ -139,6 +139,43 @@ describe('Mục 1 (FE Security trên RAM) - Nhóm 1.1: Đăng nhập & Đăng xu
     expect(localStorage.getItem('absa_refresh_token')).toBeNull();
     expect(localStorage.getItem('absa_user')).toBeNull();
   });
+
+  it('[TC-FE-SEC-04-REMEMBER] Bỏ chọn "Ghi nhớ tôi" khi đăng nhập chỉ lưu phiên tạm trong sessionStorage, không lưu vào localStorage', async () => {
+    // 1. Arrange (Chuẩn bị): Giả lập API đăng nhập thành công
+    mockFetchOk({
+      access_token: 'temp-session-token',
+      refresh_token: 'temp-refresh-token',
+      user: { id: 'u-temp', email: 'temp@higen.vn', role: 'STORE_MANAGER' },
+    });
+
+    renderWithAuthRouter(
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/overview" element={<div>Trang Tổng Quan</div>} />
+      </Routes>,
+      { initialEntries: ['/login'] }
+    );
+
+    // 2. Act (Thực thi): Bỏ tích ô "Ghi nhớ tôi" (mặc định đang checked = true) rồi bấm Đăng nhập
+    const rememberCheckbox = screen.getByRole('checkbox');
+    if (rememberCheckbox.checked) {
+      fireEvent.click(rememberCheckbox);
+    }
+    fireEvent.change(screen.getByPlaceholderText('Nhập email của bạn'), {
+      target: { value: 'temp@higen.vn' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Nhập mật khẩu'), {
+      target: { value: 'Secret@123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    // 3. Assert (Kiểm chứng): Chuẩn ISO/IEC 25010 Security yêu cầu không giữ token bền vững trong localStorage khi người dùng bỏ chọn Remember Me
+    await waitFor(() => {
+      expect(screen.getByText('Trang Tổng Quan')).toBeTruthy();
+    });
+    expect(localStorage.getItem('absa_token')).toBeNull();
+    expect(sessionStorage.getItem('absa_token')).toBe('temp-session-token');
+  });
 });
 
 describe('Mục 1 (FE Security trên RAM) - Nhóm 1.2: Đăng ký tài khoản', () => {
@@ -194,6 +231,28 @@ describe('Mục 1 (FE Security trên RAM) - Nhóm 1.2: Đăng ký tài khoản',
 
     // 3. Assert (Kiểm chứng): Báo lỗi ngay trên UI và không gọi API
     expect(screen.getByText('Mật khẩu xác nhận không khớp.')).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('[TC-FE-SEC-07] Kiểm tra giá trị biên độ dài mật khẩu (< 6 ký tự): Chặn gửi API khi mật khẩu chỉ có 5 ký tự', () => {
+    // 1. Arrange (Chuẩn bị): Chuẩn ISO/IEC/IEEE 29119-4 (Boundary Value Analysis: 5 ký tự < ngưỡng tối thiểu 6 ký tự)
+    const fetchMock = mockFetchOk({});
+
+    renderWithAuthRouter(
+      <Routes>
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>,
+      { initialEntries: ['/register'] }
+    );
+
+    // 2. Act (Thực thi): Nhập mật khẩu 5 ký tự "12345" khớp cả 2 ô và bấm Tạo tài khoản
+    fireEvent.change(screen.getByPlaceholderText('Nhập họ và tên'), { target: { value: 'Tester Biên' } });
+    fireEvent.change(screen.getByPlaceholderText('Nhập email của bạn'), { target: { value: 'boundary@higen.vn' } });
+    fireEvent.change(screen.getByPlaceholderText('Tạo mật khẩu'), { target: { value: '12345' } });
+    fireEvent.change(screen.getByPlaceholderText('Nhập lại mật khẩu'), { target: { value: '12345' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    // 3. Assert (Kiểm chứng): Không được gọi API lên Backend khi mật khẩu dưới 6 ký tự
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

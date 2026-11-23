@@ -64,5 +64,30 @@ public class JwtTokenServiceTests
         // 3. Assert (Kiểm chứng): Hệ thống từ chối xác thực và trả về null
         Assert.Null(principal);
     }
+
+    [Fact]
+    public void GetPrincipalFromExpiredToken_ValidSignedToken_ReturnsClaimsPrincipalWithUserId()
+    {
+        // [TC-BE-SEC-20] Chuẩn RFC 7519 & ISO/IEC 25010:2023 (Security - Authenticity)
+        // 1. Arrange (Chuẩn bị): Sinh một JWT hợp lệ từ JwtTokenService
+        using var context = new SecurityTestContext();
+        var userId = Guid.NewGuid();
+        var user = new SystemUser
+        {
+            Id = userId,
+            Email = "validjwt@higen.vn",
+            FullName = "Người Dùng Hợp Lệ",
+            Role = "STORE_MANAGER",
+            IsActive = true
+        };
+
+        var (validToken, _) = context.JwtTokenService.GenerateAccessToken(user);
+
+        // 2. Act (Thực thi): Đưa chính Token hợp lệ vừa sinh vào hàm trích xuất Principal
+        var principal = context.JwtTokenService.GetPrincipalFromExpiredToken(validToken);
+
+        // 3. Assert (Kiểm chứng): Phải trả về ClaimsPrincipal hợp lệ (yêu cầu cấu hình đúng ValidIssuer trong TokenValidationParameters)
+        Assert.NotNull(principal);
+    }
 }
 

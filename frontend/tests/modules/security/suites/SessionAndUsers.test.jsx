@@ -51,6 +51,32 @@ describe('Mục 1 (FE Security trên RAM) - Nhóm 1.3: Bảo vệ đường dẫ
     expect(localStorage.getItem('absa_refresh_token')).toBeNull();
     expect(localStorage.getItem('absa_user')).toBeNull();
   });
+
+  it('[TC-FE-SEC-10] Phân quyền RBAC: Chặn tài khoản không phải ADMIN (CSKH_STAFF) truy cập trực tiếp đường dẫn /users', async () => {
+    // 1. Arrange (Chuẩn bị): Đăng nhập dưới quyền nhân viên CSKH_STAFF (không phải ADMIN)
+    localStorage.setItem('absa_token', 'cskh-valid-token');
+    localStorage.setItem(
+      'absa_user',
+      JSON.stringify({ id: 'u-staff', email: 'cskh@higen.vn', fullName: 'Nhân Viên CSKH', role: 'CSKH_STAFF' })
+    );
+    window.history.pushState({}, '', '/users');
+
+    // 2. Act (Thực thi): Truy cập trực tiếp URL /users trên App
+    render(<App />);
+
+    // 3. Assert (Kiểm chứng): Chuẩn ISO/IEC 25010 (Access Control / RBAC) yêu cầu không được render trang Quản lý Tài Khoản Người Dùng của Admin
+    expect(screen.queryByText('Quản lý Tài Khoản Người Dùng')).toBeNull();
+  });
+
+  it('[TC-FE-SEC-12] Chịu lỗi (Fault Tolerance): Không bị sập ứng dụng khi dữ liệu JSON của absa_user trong localStorage bị hỏng', () => {
+    // 1. Arrange (Chuẩn bị): Chuẩn ISO/IEC 25010:2023 (Reliability - Fault Tolerance)
+    localStorage.setItem('absa_user', '{corrupted_json_string');
+    window.history.pushState({}, '', '/login');
+
+    // 2. Act & 3. Assert (Thực thi & Kiểm chứng): Khởi tạo App không được ném lỗi SyntaxError làm trắng trang
+    expect(() => render(<App />)).not.toThrow();
+    expect(screen.getByText('Đăng nhập khách hàng')).toBeTruthy();
+  });
 });
 
 describe('Mục 1 (FE Security trên RAM) - Nhóm 1.4: Quản lý tài khoản Admin (UsersPage)', () => {
