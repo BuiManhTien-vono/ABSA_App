@@ -8,7 +8,7 @@ namespace HigenAbsa.Modules.Reporting.Endpoints;
 
 [ApiController]
 [Route("api/v1/dashboard")]
-[AllowAnonymous]
+[Authorize]
 public class DashboardController(IDashboardService dashboardService) : ControllerBase
 {
     [HttpGet("kpi")]

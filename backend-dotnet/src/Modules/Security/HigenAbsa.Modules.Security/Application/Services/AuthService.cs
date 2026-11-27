@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,8 @@ public interface IAuthService
 
 public class AuthService : IAuthService
 {
+    private static readonly ConcurrentDictionary<string, (int FailedCount, DateTimeOffset? LockoutEnd)> _loginAttempts = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly SecurityDbContext _dbContext;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IInMemoryEventBus _eventBus;
@@ -49,8 +52,15 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, string ipAddress)
     {
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            throw new ArgumentException("Password must be at least 6 characters.");
+
+        if (request.Password.All(char.IsDigit))
+            throw new ArgumentException("Password must contain at least one non-numeric character.");
+
+        string normalizedEmail = (request.Email ?? "").Trim().ToLower();
         var existingUser = await _dbContext.SystemUsers
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         if (existingUser != null)
             throw new InvalidOperationException("Email address is already registered.");
 
@@ -59,11 +69,11 @@ public class AuthService : IAuthService
         var user = new SystemUser
         {
             Id = Guid.NewGuid(),
-            Email = request.Email.ToLower().Trim(),
+            Email = normalizedEmail,
             PasswordHash = passwordHash,
             FullName = request.FullName.Trim(),
             PhoneNumber = request.PhoneNumber?.Trim(),
-            Role = string.IsNullOrWhiteSpace(request.Role) ? "STORE_MANAGER" : request.Role.ToUpper(),
+            Role = "STORE_MANAGER", // Public registration strictly defaults to STORE_MANAGER to prevent privilege escalation
             IsActive = true
         };
 
@@ -99,11 +109,36 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, string ipAddress)
     {
+        string emailKey = (request.Email ?? "").Trim().ToLower();
+        if (_loginAttempts.TryGetValue(emailKey, out var state))
+        {
+            if (state.LockoutEnd.HasValue && state.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                throw new UnauthorizedAccessException("Account is temporarily locked out due to multiple failed login attempts. Please try again later.");
+            }
+        }
+
         var user = await _dbContext.SystemUsers
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower().Trim());
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == emailKey);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            _loginAttempts.AddOrUpdate(emailKey,
+                _ => (1, null),
+                (_, current) =>
+                {
+                    int newCount = current.FailedCount + 1;
+                    if (newCount >= 5)
+                    {
+                        return (newCount, DateTimeOffset.UtcNow.AddMinutes(15));
+                    }
+                    return (newCount, null);
+                });
+
             throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        _loginAttempts.TryRemove(emailKey, out _);
 
         if (!user.IsActive)
             throw new UnauthorizedAccessException("Account is deactivated. Contact administrator.");
@@ -142,7 +177,23 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(r => r.Token == refreshToken);
 
         if (existingToken == null || existingToken.IsRevoked || existingToken.IsExpired)
+        {
+            if (existingToken != null && existingToken.IsRevoked)
+            {
+                // Breach / Token Replay detection: revoke all active descendant refresh tokens of user
+                var activeTokens = await _dbContext.RefreshTokens
+                    .Where(r => r.UserId == existingToken.UserId && !r.IsRevoked)
+                    .ToListAsync();
+                foreach (var token in activeTokens)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedAt = DateTimeOffset.UtcNow;
+                    token.RevokedByIp = ipAddress;
+                }
+                await _dbContext.SaveChangesAsync();
+            }
             throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+        }
 
         var user = existingToken.User;
         if (user == null || !user.IsActive)
@@ -201,6 +252,9 @@ public class AuthService : IAuthService
 
     public async Task<PagedResult<UserListDto>> GetUsersAsync(int page, int pageSize, string? role, string? search)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = _dbContext.SystemUsers.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(role))
@@ -240,17 +294,22 @@ public class AuthService : IAuthService
 
     public async Task<UserProfileDto> CreateUserAsync(CreateUserRequest request)
     {
-        var exists = await _dbContext.SystemUsers.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower().Trim());
+        var allowedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "ADMIN", "CSKH_STAFF", "STORE_MANAGER" };
+        if (string.IsNullOrWhiteSpace(request.Role) || !allowedRoles.Contains(request.Role.Trim()))
+            throw new ArgumentException($"Invalid role '{request.Role}'. Allowed roles: ADMIN, CSKH_STAFF, STORE_MANAGER.");
+
+        var normalizedEmail = (request.Email ?? "").Trim().ToLower();
+        var exists = await _dbContext.SystemUsers.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (exists) throw new InvalidOperationException("Email address is already in use.");
 
         var user = new SystemUser
         {
             Id = Guid.NewGuid(),
-            Email = request.Email.ToLower().Trim(),
+            Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FullName = request.FullName.Trim(),
             PhoneNumber = request.PhoneNumber?.Trim(),
-            Role = request.Role.ToUpper(),
+            Role = request.Role.Trim().ToUpper(),
             IsActive = true
         };
 
@@ -288,11 +347,17 @@ public class AuthService : IAuthService
 
     public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
     {
+        if (currentPassword == newPassword)
+            throw new ArgumentException("New password cannot be the same as current password.");
+
         var user = await _dbContext.SystemUsers.FindAsync(userId);
         if (user == null) throw new InvalidOperationException("User not found.");
 
         if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
             throw new UnauthorizedAccessException("Current password is incorrect.");
+
+        if (BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash))
+            throw new InvalidOperationException("New password cannot be the same as current password.");
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.MarkUpdated();
@@ -311,4 +376,5 @@ public class AuthService : IAuthService
         CreatedAt = user.CreatedAt
     };
 }
+
 

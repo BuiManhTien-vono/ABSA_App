@@ -37,6 +37,9 @@ public class AuditLogService(
         int page, int pageSize, string? action, Guid? userId, string? entityName,
         DateTime? dateFrom, DateTime? dateTo)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = db.AuditLogs.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(action))

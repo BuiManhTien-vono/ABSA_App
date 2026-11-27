@@ -125,7 +125,7 @@ public class DashboardService(ReportingDbContext db) : IDashboardService
 
     public async Task<List<NegativeSpikeDto>> GetNegativeSpikesAsync(int days)
     {
-        var since = DateTimeOffset.UtcNow.AddDays(-Math.Max(1, days));
+        var since = DateTimeOffset.UtcNow.AddDays(-Math.Clamp(days, 1, 365));
 
         var negQuery = from a in db.ReadAnalyses.AsNoTracking()
                        join r in db.ReadReviews.AsNoTracking() on a.ReviewId equals r.Id

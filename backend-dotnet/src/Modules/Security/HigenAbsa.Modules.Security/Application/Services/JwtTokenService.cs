@@ -81,6 +81,7 @@ public class JwtTokenService : IJwtTokenService
             ValidateAudience = true,
             ValidAudience = _audience,
             ValidateIssuer = true,
+            ValidIssuer = _issuer,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
             ValidateLifetime = false

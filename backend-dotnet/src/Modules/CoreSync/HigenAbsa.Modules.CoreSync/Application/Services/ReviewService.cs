@@ -26,6 +26,12 @@ public class ReviewService(CoreSyncDbContext db, IInferenceLookupContract infere
         byte? rating, string? sentiment,
         string? status, string? search)
     {
+        if (rating.HasValue && (rating.Value < 1 || rating.Value > 5))
+            throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
+
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = db.Reviews
             .Include(r => r.Store)
             .Include(r => r.Product)
@@ -52,6 +58,36 @@ public class ReviewService(CoreSyncDbContext db, IInferenceLookupContract infere
                 r.PlatformReviewId.ToLower().Contains(term));
         }
 
+        if (!string.IsNullOrWhiteSpace(sentiment))
+        {
+            var allReviews = await query.OrderByDescending(r => r.ReviewCreatedAt).ToListAsync();
+            var filteredItems = new List<ReviewListDto>();
+            foreach (var r in allReviews)
+            {
+                var analysis = await inferenceLookup.GetAnalysisByReviewIdAsync(r.Id);
+                if (analysis?.OverallSentiment == sentiment.ToUpper())
+                {
+                    filteredItems.Add(new ReviewListDto
+                    {
+                        Id = r.Id,
+                        PlatformReviewId = r.PlatformReviewId,
+                        Rating = r.Rating,
+                        CommentText = r.CommentText,
+                        Status = r.Status,
+                        ReviewCreatedAt = r.ReviewCreatedAt,
+                        OverallSentiment = analysis?.OverallSentiment,
+                        SentimentScore = analysis?.Confidence,
+                        StoreName = r.Store?.StoreName,
+                        ProductName = r.Product?.Name,
+                        CustomerName = r.Customer?.DisplayName
+                    });
+                }
+            }
+            int totalFiltered = filteredItems.Count;
+            var pagedItems = filteredItems.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return new PagedResult<ReviewListDto>(pagedItems, totalFiltered, page, pageSize);
+        }
+
         int totalCount = await query.CountAsync();
         var reviews = await query
             .OrderByDescending(r => r.ReviewCreatedAt)
@@ -63,9 +99,6 @@ public class ReviewService(CoreSyncDbContext db, IInferenceLookupContract infere
         foreach (var r in reviews)
         {
             var analysis = await inferenceLookup.GetAnalysisByReviewIdAsync(r.Id);
-            if (!string.IsNullOrWhiteSpace(sentiment) && analysis?.OverallSentiment != sentiment.ToUpper())
-                continue;
-
             dtoList.Add(new ReviewListDto
             {
                 Id = r.Id,
@@ -130,6 +163,10 @@ public class ReviewService(CoreSyncDbContext db, IInferenceLookupContract infere
 
     public async Task<ReviewListDto?> UpdateReviewStatusAsync(Guid id, string status)
     {
+        var allowedStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "PENDING", "REPLIED", "FAILED", "SKIPPED" };
+        if (string.IsNullOrWhiteSpace(status) || !allowedStatuses.Contains(status.Trim()))
+            throw new ArgumentException($"Invalid review status: '{status}'. Allowed statuses are: PENDING, REPLIED, FAILED, SKIPPED.");
+
         var review = await db.Reviews
             .Include(r => r.Store)
             .Include(r => r.Product)

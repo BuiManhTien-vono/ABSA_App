@@ -112,9 +112,10 @@ public class StoreService(
         var platform = await db.Platforms.FindAsync(request.PlatformId)
             ?? throw new InvalidOperationException($"Platform with ID {request.PlatformId} not found.");
 
+        var normalizedCode = (request.StoreCodeOnPlatform ?? "").Trim().ToLower();
         var exists = await db.StoreConnections.AnyAsync(s =>
             s.PlatformId == request.PlatformId &&
-            s.StoreCodeOnPlatform == request.StoreCodeOnPlatform);
+            s.StoreCodeOnPlatform.ToLower() == normalizedCode);
 
         if (exists)
             throw new InvalidOperationException($"Store code '{request.StoreCodeOnPlatform}' already exists on platform '{platform.Name}'.");

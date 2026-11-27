@@ -80,6 +80,7 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
         }
     }
 
+    [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)

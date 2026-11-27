@@ -27,6 +27,9 @@ bin/
 obj/
 [Bb]in/
 [Oo]bj/
+TestResults/
+[Tt]est[Rr]esults/
+*.trx
 *.user
 *.suo
 *.userosscache

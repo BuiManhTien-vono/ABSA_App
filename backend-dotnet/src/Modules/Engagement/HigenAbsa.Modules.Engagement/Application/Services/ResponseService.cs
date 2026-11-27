@@ -229,6 +229,12 @@ public class ResponseService(
 
     public async Task<AutomationRuleDto> CreateRuleAsync(CreateRuleRequest request)
     {
+        if (request.DelayMinutes < 0 || request.MinRating < 1 || request.MinRating > 5 || request.MaxRating < 1 || request.MaxRating > 5)
+            throw new ArgumentException("Invalid rule configuration: delay cannot be negative and ratings must be between 1 and 5.");
+
+        if (request.MinRating > request.MaxRating)
+            throw new ArgumentException("MinRating cannot be greater than MaxRating.");
+
         var rule = new AutomationRule
         {
             Id = Guid.NewGuid(),
@@ -362,6 +368,9 @@ public class ResponseService(
     public async Task<ReviewResponseItemDto> SendManualResponseAsync(
         Guid reviewId, SendResponseRequest request, Guid userId)
     {
+        if (string.IsNullOrWhiteSpace(request.ResponseText))
+            throw new ArgumentException("Response message cannot be empty or whitespace.");
+
         var response = new ReviewResponse
         {
             Id = Guid.NewGuid(),

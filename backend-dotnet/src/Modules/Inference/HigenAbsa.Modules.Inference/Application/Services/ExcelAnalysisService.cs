@@ -28,6 +28,11 @@ public class ExcelAnalysisService(
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         string ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (ext != ".xlsx" && ext != ".xls" && ext != ".csv")
+        {
+            throw new InvalidOperationException($"Unsupported file extension '{ext}'. Only .xlsx, .xls, and .csv are supported.");
+        }
+
         using var reader = ext == ".csv"
             ? ExcelReaderFactory.CreateCsvReader(stream)
             : ExcelReaderFactory.CreateReader(stream);
@@ -43,6 +48,11 @@ public class ExcelAnalysisService(
         if (dataSet.Tables.Count == 0 || dataSet.Tables[0].Rows.Count == 0)
         {
             throw new InvalidOperationException("Uploaded Excel file contains no worksheets or data rows.");
+        }
+
+        if (dataSet.Tables[0].Rows.Count > 2000)
+        {
+            throw new InvalidOperationException($"File contains too many rows ({dataSet.Tables[0].Rows.Count}). Maximum allowed for Excel analysis is 2000 rows.");
         }
 
         var table = dataSet.Tables[0];

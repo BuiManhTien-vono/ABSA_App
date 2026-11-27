@@ -9,7 +9,7 @@ namespace HigenAbsa.Modules.Engagement.Endpoints;
 
 [ApiController]
 [Route("api/v1/tickets")]
-[AllowAnonymous]
+[Authorize]
 public class TicketController(ITicketService ticketService) : ControllerBase
 {
     [HttpGet]

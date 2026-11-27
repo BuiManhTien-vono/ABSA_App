@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +14,13 @@ using HigenAbsa.Modules.Inference.Infrastructure;
 namespace HigenAbsa.Modules.Inference.Endpoints;
 
 [ApiController]
+[Authorize]
 public class InferenceController(
     IInferenceService service,
     IServiceScopeFactory scopeFactory,
     ILogger<InferenceController> logger) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("/health")]
     [HttpGet("/api/v1/inference/health")]
     public IActionResult Health() => Ok(new
@@ -32,6 +35,7 @@ public class InferenceController(
         database = "SQL Server",
     });
 
+    [AllowAnonymous]
     [HttpGet("/labels")]
     [HttpGet("/api/v1/inference/labels")]
     public IActionResult Labels([FromServices] ModelBundle model) =>
@@ -41,6 +45,9 @@ public class InferenceController(
     [HttpPost("/api/v1/inference/predict")]
     public async Task<IActionResult> Predict([FromBody] PredictRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Text) || request.Text.Trim().Length == 0)
+            return BadRequest(new { detail = "Text cannot be empty or whitespace only" });
+
         var texts = CleanTexts([request.Text]);
         if (texts == null) return BadRequest(new { detail = "No non-empty text provided" });
 
@@ -70,6 +77,11 @@ public class InferenceController(
     [HttpPost("/api/v1/inference/predict-batch")]
     public async Task<IActionResult> PredictBatch([FromBody] BatchPredictRequest request)
     {
+        if (request.Texts != null && request.Texts.Count > 100)
+        {
+            return BadRequest(new { detail = $"Batch size exceeds maximum limit of 100 items (requested {request.Texts.Count})." });
+        }
+
         var texts = CleanTexts(request.Texts);
         if (texts == null) return BadRequest(new { detail = "No non-empty text provided" });
 

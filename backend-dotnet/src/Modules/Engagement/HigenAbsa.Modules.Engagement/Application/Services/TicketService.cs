@@ -17,6 +17,9 @@ public class TicketService(
     public async Task<PagedResult<TicketListDto>> GetTicketsAsync(
         int page, int pageSize, string? status, string? priority, Guid? assignedToUserId)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = db.Tickets.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -115,6 +118,9 @@ public class TicketService(
         var user = await userLookup.GetByIdAsync(userId)
             ?? throw new InvalidOperationException("Assigned user not found.");
 
+        if (!user.IsActive)
+            throw new InvalidOperationException("Cannot assign ticket to a deactivated staff account.");
+
         ticket.AssignedToUserId = userId;
         if (ticket.Status == "OPEN")
             ticket.Status = "IN_PROGRESS";
@@ -132,6 +138,9 @@ public class TicketService(
         ticket.Status = status.ToUpper();
         if (ticket.Status is "RESOLVED" or "CLOSED")
             ticket.ResolvedAt ??= DateTimeOffset.UtcNow;
+        else
+            ticket.ResolvedAt = null;
+
         ticket.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync();

@@ -17,6 +17,9 @@ public class CustomerService(CoreSyncDbContext db) : ICustomerService
     public async Task<PagedResult<CustomerDto>> GetCustomersAsync(
         int page, int pageSize, string? riskLevel, string? search)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = db.Customers
             .Include(c => c.Store)
             .AsQueryable();
@@ -85,6 +88,10 @@ public class CustomerService(CoreSyncDbContext db) : ICustomerService
 
     public async Task<CustomerDto?> UpdateRiskLevelAsync(Guid id, string riskLevel)
     {
+        var allowedRiskLevels = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "LOW", "MEDIUM", "HIGH", "POTENTIAL_BOMMER", "NORMAL" };
+        if (string.IsNullOrWhiteSpace(riskLevel) || !allowedRiskLevels.Contains(riskLevel.Trim()))
+            throw new ArgumentException($"Invalid risk level: '{riskLevel}'. Allowed values are: LOW, MEDIUM, HIGH, POTENTIAL_BOMMER, NORMAL.");
+
         var customer = await db.Customers.Include(c => c.Store).FirstOrDefaultAsync(c => c.Id == id);
         if (customer == null) return null;
 

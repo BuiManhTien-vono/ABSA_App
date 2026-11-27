@@ -31,8 +31,16 @@ public static class InferenceModuleExtensions
 
         if (!Path.IsPathRooted(absaOptions.ModelDir))
         {
-            absaOptions.ModelDir = Path.GetFullPath(
-                Path.Combine(environment.ContentRootPath, absaOptions.ModelDir));
+            var resolvedPath = Path.GetFullPath(Path.Combine(environment.ContentRootPath, absaOptions.ModelDir));
+            if (!Directory.Exists(resolvedPath))
+            {
+                var fallbackPath = Path.GetFullPath(Path.Combine(environment.ContentRootPath, "..", absaOptions.ModelDir));
+                if (Directory.Exists(fallbackPath))
+                {
+                    resolvedPath = fallbackPath;
+                }
+            }
+            absaOptions.ModelDir = resolvedPath;
         }
 
         services.AddSingleton(absaOptions);

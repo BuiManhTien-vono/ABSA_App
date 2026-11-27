@@ -68,6 +68,8 @@ public sealed class ReportingReviewAnalyzedEventHandler(ReportingDbContext db)
             if (integrationEvent.OverallSentiment == "POS") summary.PositiveCount += 1;
             else if (integrationEvent.OverallSentiment == "NEU") summary.NeutralCount += 1;
             else if (integrationEvent.OverallSentiment == "NEG") summary.NegativeCount += 1;
+
+            summary.TotalReviews = Math.Max(summary.TotalReviews, summary.PositiveCount + summary.NeutralCount + summary.NegativeCount);
         }
 
         await db.SaveChangesAsync(cancellationToken);
