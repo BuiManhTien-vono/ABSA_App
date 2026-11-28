@@ -30,7 +30,7 @@ export default function ExcelUploadModal({ isOpen, onClose, onSuccess }) {
       if (onSuccess) onSuccess(response);
     } catch (err) {
       console.error('Lỗi phân tích Excel:', err);
-      const detail = err.response?.data?.detail || 'Không thể đọc và phân tích file Excel. Vui lòng kiểm tra định dạng.';
+      const detail = err?.message || err.response?.data?.detail || 'Không thể đọc và phân tích file Excel. Vui lòng kiểm tra định dạng.';
       setError(detail);
     } finally {
       setLoading(false);

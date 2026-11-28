@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OverviewPage from './pages/OverviewPage';
 import ProductsPage from './pages/ProductsPage';
+import ApiStoreProductsPage from './pages/ApiStoreProductsPage';
 import PlatformProductsPage from './pages/PlatformProductsPage';
 import PlatformProductDetailPage from './pages/PlatformProductDetailPage';
 import CustomersPage from './pages/CustomersPage';
@@ -55,6 +56,8 @@ export default function App() {
             <Route element={<MainLayout />}>
               <Route path="/overview" element={<OverviewPage />} />
               <Route path="/products" element={<ProductsPage />} />
+              <Route path="/products/store/:storeId" element={<ApiStoreProductsPage />} />
+              <Route path="/products/store/:storeId/:productId" element={<ApiStoreProductsPage />} />
               <Route path="/products/:platformCode" element={<PlatformProductsPage />} />
               <Route path="/products/:platformCode/:id" element={<PlatformProductDetailPage />} />
               <Route path="/customers" element={<CustomersPage />} />

@@ -37,18 +37,21 @@ function StarRating({ rating = 5 }) {
   );
 }
 
-function getMockReviewsForStore(storeId, limitPerProd = 6, maxCategories = 2, maxProdsPerCat = 2) {
+function getMockReviewsForStore(storeId, limitPerProd = null, maxCategories = null, maxProdsPerCat = null) {
   const store = LAZADA_STORES.find(s => s.id === storeId) || SHOPEE_STORES.find(s => s.id === storeId) || TIKTOK_SHOP_STORES.find(s => s.id === storeId);
   const storeName = store ? store.name : 'Cửa hàng';
 
   // 1. If Lazada store: generate rich comments per product
   if (LAZADA_STORE_CATEGORIES[storeId]) {
-    const categories = (LAZADA_STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
+    const allCats = LAZADA_STORE_CATEGORIES[storeId] || [];
+    const categories = maxCategories ? allCats.slice(0, maxCategories) : allCats;
     const reviews = [];
     categories.forEach(cat => {
-      const prods = (getLazadaProductsForCategory(storeId, cat.id) || []).slice(0, maxProdsPerCat);
+      const allProds = getLazadaProductsForCategory(storeId, cat.id) || [];
+      const prods = maxProdsPerCat ? allProds.slice(0, maxProdsPerCat) : allProds;
       prods.forEach(prod => {
-        const comments = generateLazadaMockComments(prod, limitPerProd);
+        const count = limitPerProd ?? Math.min(prod.reviewCount || 10, 30);
+        const comments = generateLazadaMockComments(prod, count);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -84,12 +87,15 @@ function getMockReviewsForStore(storeId, limitPerProd = 6, maxCategories = 2, ma
 
   // 2. If TikTok Shop store: generate rich TikTok-style comments per product
   if (TIKTOK_SHOP_STORE_CATEGORIES[storeId]) {
-    const categories = (TIKTOK_SHOP_STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
+    const allCats = TIKTOK_SHOP_STORE_CATEGORIES[storeId] || [];
+    const categories = maxCategories ? allCats.slice(0, maxCategories) : allCats;
     const reviews = [];
     categories.forEach(cat => {
-      const prods = (getTikTokShopProductsForCategory(storeId, cat.id) || []).slice(0, maxProdsPerCat);
+      const allProds = getTikTokShopProductsForCategory(storeId, cat.id) || [];
+      const prods = maxProdsPerCat ? allProds.slice(0, maxProdsPerCat) : allProds;
       prods.forEach(prod => {
-        const comments = generateTikTokShopMockComments(prod, limitPerProd);
+        const count = limitPerProd ?? Math.min(prod.reviewCount || 10, 30);
+        const comments = generateTikTokShopMockComments(prod, count);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -125,12 +131,15 @@ function getMockReviewsForStore(storeId, limitPerProd = 6, maxCategories = 2, ma
 
   // 3. If Shopee store: generate rich Shopee-style comments per product
   if (STORE_CATEGORIES[storeId]) {
-    const categories = (STORE_CATEGORIES[storeId] || []).slice(0, maxCategories);
+    const allCats = STORE_CATEGORIES[storeId] || [];
+    const categories = maxCategories ? allCats.slice(0, maxCategories) : allCats;
     const reviews = [];
     categories.forEach(cat => {
-      const prods = (getProductsForCategory(storeId, cat.id, { includeComments: false }) || []).slice(0, maxProdsPerCat);
+      const allProds = getProductsForCategory(storeId, cat.id, { includeComments: false }) || [];
+      const prods = maxProdsPerCat ? allProds.slice(0, maxProdsPerCat) : allProds;
       prods.forEach(prod => {
-        const comments = generateMockComments(prod, limitPerProd);
+        const count = limitPerProd ?? Math.min(prod.reviewCount || 10, 30);
+        const comments = generateMockComments(prod, count);
         comments.forEach(c => {
           reviews.push({
             id: c.id,
@@ -247,8 +256,8 @@ export default function ReviewFeedPage() {
       dbStores.forEach(s => {
         connectedList.push({
           id: s.id,
-          storeName: s.storeName,
-          platformName: s.platformName || 'API',
+          storeName: s.storeName ?? s.store_name ?? 'Cửa hàng API',
+          platformName: s.platformName ?? s.platform_name ?? 'API',
           isMock: false,
         });
       });
@@ -335,16 +344,41 @@ export default function ReviewFeedPage() {
         // Fetch DB reviews
         let items = [];
         try {
-          const res = await reviewService.getReviews({
-            page: 1,
-            pageSize: 200,
+          const baseParams = {
+            pageSize: 100,
             storeId: storeId || undefined,
             rating: rating ? parseInt(rating, 10) : undefined,
             sentiment,
             status,
             search,
-          });
-          items = res?.items || [];
+          };
+          const firstRes = await reviewService.getReviews({ ...baseParams, page: 1 });
+          const rawItems = [...(firstRes?.items || [])];
+
+          const totalCount = firstRes?.totalCount ?? firstRes?.total_count ?? rawItems.length;
+          const totalPages = Math.min(30, Math.ceil(totalCount / 100));
+          if (totalPages > 1) {
+            const extraRequests = [];
+            for (let p = 2; p <= totalPages; p++) {
+              extraRequests.push(reviewService.getReviews({ ...baseParams, page: p }));
+            }
+            const extraResponses = await Promise.all(extraRequests);
+            extraResponses.forEach((r) => {
+              if (r?.items?.length) rawItems.push(...r.items);
+            });
+          }
+
+          items = rawItems.map((r) => ({
+            ...r,
+            platformReviewId: r.platformReviewId ?? r.platform_review_id,
+            commentText: r.commentText ?? r.comment_text ?? '',
+            reviewCreatedAt: r.reviewCreatedAt ?? r.review_created_at,
+            overallSentiment: r.overallSentiment ?? r.overall_sentiment ?? null,
+            sentimentScore: r.sentimentScore ?? r.sentiment_score ?? null,
+            customerName: r.customerName ?? r.customer_name ?? 'Khách hàng',
+            storeName: r.storeName ?? r.store_name ?? 'Gian hàng',
+            productName: r.productName ?? r.product_name ?? '',
+          }));
         } catch (e) {
           console.error('Error fetching reviews from DB:', e);
         }
@@ -353,10 +387,8 @@ export default function ReviewFeedPage() {
         if (!storeId) {
           let aggregated = [];
           const connectedMockStores = storesList.filter(s => s.isMock);
-          // Only sample from the top 3 connected stores to keep it lightweight (< 1ms)
-          const sampleStores = connectedMockStores.slice(0, 3);
-          sampleStores.forEach(s => {
-            aggregated = aggregated.concat(getMockReviewsForStore(s.id, 5, 2, 2));
+          connectedMockStores.forEach(s => {
+            aggregated = aggregated.concat(getMockReviewsForStore(s.id));
           });
 
           if (rating) aggregated = aggregated.filter(r => String(r.rating) === String(rating));

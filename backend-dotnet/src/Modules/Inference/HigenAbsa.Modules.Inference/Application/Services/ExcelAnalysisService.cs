@@ -142,6 +142,9 @@ public class ExcelAnalysisService(
         int posCount = 0, neuCount = 0, negCount = 0;
         var virtualStoreId = Guid.NewGuid();
 
+        var pendingReviewEvents = new List<ReviewCreatedIntegrationEvent>();
+        var pendingNegativeEvents = new List<NegativeReviewDetectedIntegrationEvent>();
+
         for (int i = 0; i < extractedRows.Count; i++)
         {
             var item = extractedRows[i];
@@ -212,13 +215,13 @@ public class ExcelAnalysisService(
                     });
                 }
 
-                // Notify other modules to create Review and Ticket
-                await eventBus.PublishAsync(new ReviewCreatedIntegrationEvent(
+                // Queue events to publish AFTER SaveChangesAsync so ReviewCreatedEventHandler sees existing analysis
+                pendingReviewEvents.Add(new ReviewCreatedIntegrationEvent(
                     reviewId, virtualStoreId, item.Rating, item.CommentText, DateTimeOffset.UtcNow));
 
                 if (pred.OverallSentiment.Label == "NEG")
                 {
-                    await eventBus.PublishAsync(new NegativeReviewDetectedIntegrationEvent(
+                    pendingNegativeEvents.Add(new NegativeReviewDetectedIntegrationEvent(
                         reviewId, virtualStoreId, item.CustomerName ?? "Khách hàng", "",
                         $"Khiếu nại Excel: {item.ProductName ?? "Sản phẩm"}", item.CommentText, "MEDIUM"));
                 }
@@ -228,6 +231,12 @@ public class ExcelAnalysisService(
         if (saveToDb)
         {
             await db.SaveChangesAsync();
+
+            foreach (var ev in pendingReviewEvents)
+                await eventBus.PublishAsync(ev);
+
+            foreach (var ev in pendingNegativeEvents)
+                await eventBus.PublishAsync(ev);
         }
 
         int total = extractedRows.Count;

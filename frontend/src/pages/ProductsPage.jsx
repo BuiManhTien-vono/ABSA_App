@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Package, Store, ChevronRight, ShoppingBag, BarChart3, Search, X, Star } from 'lucide-react';
+import storeService from '../services/storeService';
 import { SHOPEE_STORES, STORE_CATEGORIES, getProductsForCategory } from '../data/shopeeData';
 import { LAZADA_STORES, LAZADA_STORE_CATEGORIES, getLazadaProductsForCategory } from '../data/lazadaData';
 import { TIKTOK_SHOP_STORES, TIKTOK_SHOP_STORE_CATEGORIES, getTikTokShopProductsForCategory } from '../data/tiktokShopData';
@@ -48,6 +49,27 @@ export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = (searchParams.get('search') || '').trim();
   const connectedPlatforms = useMemo(() => getConnectedPlatforms(), []);
+  const [apiStores, setApiStores] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    storeService.getStores({ pageSize: 50 })
+      .then((res) => {
+        if (!active) return;
+        const items = (res?.items || []).map((s) => ({
+          id: s.id,
+          storeName: s.storeName ?? s.store_name ?? '',
+          platformName: s.platformName ?? s.platform_name ?? 'Sàn TMĐT',
+          platformCode: (s.platformCode ?? s.platform_code ?? '').toLowerCase(),
+          storeCodeOnPlatform: s.storeCodeOnPlatform ?? s.store_code_on_platform ?? '',
+          productCount: s.productCount ?? s.product_count ?? 0,
+          reviewCount: s.reviewCount ?? s.review_count ?? 0,
+        }));
+        setApiStores(items);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   // Search across all platforms and products if searchQuery is provided
   const searchResults = useMemo(() => {
@@ -402,6 +424,42 @@ export default function ProductsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!searchQuery && apiStores.length > 0 && (
+        <div style={{ marginTop: '28px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: '0 0 12px 0' }}>
+            Cửa hàng kết nối qua API ({apiStores.length})
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+            {apiStores.map((s) => (
+              <div
+                key={s.id}
+                onClick={() => navigate(`/products/store/${s.id}`)}
+                style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px',
+                  cursor: 'pointer', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#4f46e5', background: '#eef2ff', padding: '3px 10px', borderRadius: '999px' }}>
+                    {s.platformName}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>{s.storeCodeOnPlatform}</span>
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
+                  {s.storeName}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#475569' }}>
+                  <span>{s.productCount} sản phẩm • {s.reviewCount} đánh giá</span>
+                  <span style={{ color: '#4f46e5', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    Mở shop <ChevronRight size={14} />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
