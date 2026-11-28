@@ -36,6 +36,7 @@ public static class CoreSyncModuleExtensions
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<ISampleDataService, SampleDataService>();
 
         services.AddScoped<IStoreLookupContract, CoreSyncStoreLookupService>();
         services.AddScoped<IReviewLookupContract, CoreSyncReviewLookupService>();

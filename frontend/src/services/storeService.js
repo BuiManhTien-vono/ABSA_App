@@ -1,7 +1,7 @@
 import apiClient, { buildQuery } from './apiClient';
 
 export const storeService = {
-  getPlatforms: () => apiClient.get('/api/v1/platforms'),
+  getPlatforms: () => apiClient.get('/api/v1/stores/platforms'),
   getStores: (params = {}) => apiClient.get(`/api/v1/stores${buildQuery(params)}`),
   getStoreById: (id) => apiClient.get(`/api/v1/stores/${id}`),
   createStore: (data) => apiClient.post('/api/v1/stores', data),
@@ -9,6 +9,7 @@ export const storeService = {
   deleteStore: (id) => apiClient.delete(`/api/v1/stores/${id}`),
   syncStore: (id) => apiClient.post(`/api/v1/stores/${id}/sync`),
   createMockLazadaStore: () => apiClient.post('/api/v1/stores/mock-lazada'),
+  seedSampleCatalog: (params = {}) => apiClient.post(`/api/v1/sample-data/seed-catalog${buildQuery(params)}`),
 };
 
 export default storeService;

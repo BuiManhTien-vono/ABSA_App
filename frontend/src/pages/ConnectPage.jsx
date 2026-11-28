@@ -105,6 +105,7 @@ export default function ConnectPage() {
     storeCodeOnPlatform: '',
     accessToken: '',
   });
+  const [seedSampleData, setSeedSampleData] = useState(true);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
   const [disconnectPlatformCode, setDisconnectPlatformCode] = useState(null);
@@ -135,12 +136,23 @@ export default function ConnectPage() {
         storeService.getStores({ pageSize: 50 }),
       ]);
       setPlatforms(pRes || []);
+      const apiStores = (sRes?.items || []).map((s) => ({
+        ...s,
+        platformId: s.platformId ?? s.platform_id,
+        platformCode: s.platformCode ?? s.platform_code ?? '',
+        platformName: s.platformName ?? s.platform_name ?? '',
+        storeName: s.storeName ?? s.store_name ?? '',
+        storeCodeOnPlatform: s.storeCodeOnPlatform ?? s.store_code_on_platform ?? '',
+        productCount: s.productCount ?? s.product_count ?? 0,
+        reviewCount: s.reviewCount ?? s.review_count ?? 0,
+        lastSyncedAt: s.lastSyncedAt ?? s.last_synced_at ?? null,
+      }));
       let mockStores = JSON.parse(localStorage.getItem('mockApiStores') || 'null');
       if (!Array.isArray(mockStores) || mockStores.length === 0) {
         mockStores = DEFAULT_MOCK_API_STORES;
         localStorage.setItem('mockApiStores', JSON.stringify(mockStores));
       }
-      setStores([...(sRes?.items || []), ...mockStores]);
+      setStores([...apiStores, ...mockStores]);
     } catch (err) {
       console.error(err);
       setStores(DEFAULT_MOCK_API_STORES);
@@ -153,10 +165,14 @@ export default function ConnectPage() {
   async function handleCreateStore(e) {
     e.preventDefault();
     setError(null);
+    const pid = parseInt(formData.platformId, 10);
+    if (!pid || Number.isNaN(pid)) {
+      setError('Vui lòng chọn sàn TMĐT.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const pid = parseInt(formData.platformId, 10);
-      await storeService.createStore({
+      const createdStore = await storeService.createStore({
         platformId: pid,
         platform_id: pid,
         storeName: formData.storeName,
@@ -166,6 +182,20 @@ export default function ConnectPage() {
         accessToken: formData.accessToken || null,
         access_token: formData.accessToken || null,
       });
+
+      if (seedSampleData) {
+        const seedRes = await storeService.seedSampleCatalog({
+          storeId: createdStore?.id,
+          productCount: 10,
+          reviewsPerProduct: 100,
+        });
+        showToast(
+          `Đã kết nối "${formData.storeName}" và tạo ${seedRes?.products_created ?? 10} sản phẩm × 100 bình luận (${seedRes?.reviews_created ?? 1000} reviews)!`
+        );
+      } else {
+        showToast(`Đã kết nối cửa hàng "${formData.storeName}" thành công!`);
+      }
+
       setShowModal(false);
       setFormData({ platformId: '', storeName: '', storeCodeOnPlatform: '', accessToken: '' });
       loadData();
@@ -317,13 +347,16 @@ export default function ConnectPage() {
   }
 
   function handleStoreClick(store) {
+    if (store?.id && !store.isMock) {
+      navigate(`/products/store/${store.id}`);
+      return;
+    }
     const platformCode = String(store.platformCode || '').toLowerCase();
     if (platformCode === 'tiktok_shop') {
       navigate('/products/tiktok-shop');
     } else if (platformCode === 'shopee' || platformCode === 'lazada') {
       navigate(`/products/${platformCode}`);
     } else {
-      // Tiki and future API platforms can still use the generic product route.
       navigate(`/products/${platformCode}`);
     }
   }
@@ -1000,6 +1033,7 @@ export default function ConnectPage() {
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#334155', marginBottom: '4px' }}>Sàn TMĐT</label>
                 <select
+                  required
                   value={formData.platformId}
                   onChange={(e) => setFormData({ ...formData, platformId: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
@@ -1022,12 +1056,20 @@ export default function ConnectPage() {
                   onChange={(e) => setFormData({ ...formData, storeCodeOnPlatform: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }} />
               </div>
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#334155', marginBottom: '4px' }}>Access Token (API Key)</label>
                 <input type="password" placeholder="Nhập Access Token..." value={formData.accessToken}
                   onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }} />
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={seedSampleData}
+                  onChange={(e) => setSeedSampleData(e.target.checked)}
+                />
+                <span>Tự động tạo dữ liệu mẫu (10 sản phẩm × 100 bình luận)</span>
+              </label>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button type="button" onClick={() => setShowModal(false)}
                   style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '13px', cursor: 'pointer' }}>
